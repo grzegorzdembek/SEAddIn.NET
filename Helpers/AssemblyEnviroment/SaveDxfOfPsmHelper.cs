@@ -85,5 +85,4 @@ namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
             }
         }
     }
-
 }

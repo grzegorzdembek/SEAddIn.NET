@@ -68,7 +68,7 @@ namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
                 catch
                 {
                     missFiles++;
-                    string errorName = "NIEZNANY PLIK";
+                    string errorName = "Nieznany plik";
                     try { errorName = System.IO.Path.GetFileNameWithoutExtension(occurrence.Key); } catch { }
                     feedback.AppendLine($"{errorName}   | --- | --- | --- | --- | --- | --- |");
                     continue;
@@ -92,7 +92,6 @@ namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
                 StartPosition = FormStartPosition.CenterScreen
             };
 
-            // 2. Tworzymy pole tekstowe, które zajmie całe okno
             TextBox textBox = new TextBox
             {
                 Multiline = true,

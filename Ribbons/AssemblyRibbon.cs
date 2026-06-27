@@ -8,6 +8,7 @@ namespace SolidEdgeAdd_In.Ribbons
         {
             this.Application = application;
             var tab = AddTab("Dodatki"); var metalSheetGroup = tab.AddGroup("Blachy"); var excelGroup = tab.AddGroup("Excel"); var propertiesGroup = tab.AddGroup("Właściwości i zmienne");
+
             /*---"BLACHY"---*/
             var SaveDxfOfPsmButton = new RibbonButton(4)
             {
@@ -17,6 +18,8 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             SaveDxfOfPsmButton.Click += (control) => { var assembly = (SolidEdgeAssembly.AssemblyDocument)application.ActiveDocument; SaveDxfOfPsm.AddIn(assembly);};
             metalSheetGroup.AddControl(SaveDxfOfPsmButton);
+
+
             /*---"BLACHY"---*/
             var SaveDxfOfPartsAndPsmButton = new RibbonButton(5)
             {
@@ -26,6 +29,8 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             SaveDxfOfPartsAndPsmButton.Click += (control) => { var assembly = (SolidEdgeAssembly.AssemblyDocument)application.ActiveDocument; SaveDxfOfPartsAndPsm.AddIn(assembly);};
             metalSheetGroup.AddControl(SaveDxfOfPartsAndPsmButton);
+
+
             /*---"EXCEL"---*/
             var ExportPartsListButton = new RibbonButton(6)
             {
@@ -35,15 +40,8 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             ExportPartsListButton.Click += (control) => { var assembly = (SolidEdgeAssembly.AssemblyDocument)application.ActiveDocument; ExportPartsList.AddIn(assembly);};
             excelGroup.AddControl(ExportPartsListButton);
-            /*---"EXCEL"---*/
-            var ExportOccurrencesListButton = new RibbonButton(7)
-            {
-                Label = "Eksportuj listę wystąpień do Excela.",
-                ScreenTip = "Eksportuje listę wystąpień otwartego złożenia do Excela.",
-                SuperTip = "Zapisany zostanie arkusz Excela z tabelą (lista wystąpień) otwartego złożenia, w tej samej lokalizacji."
-            };
-            ExportOccurrencesListButton.Click += (control) => { var assembly = (SolidEdgeAssembly.AssemblyDocument)application.ActiveDocument; ExportOccurrencesList.AddIn(assembly); };
-            excelGroup.AddControl(ExportOccurrencesListButton);
+
+
             /*---"WŁAŚCIWOŚCI i ZMIENNE"---*/
             var SetCountPropertyButton = new RibbonButton(8)
             {
