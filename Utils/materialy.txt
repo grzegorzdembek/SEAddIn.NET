@@ -1,0 +1,3 @@
+Steel - Structural:1.0037 , S235JR>S235
+Steel - Stainless:1.4301 , X5CrNi18-10>1,4301
+Aluminum Alloy:3.3535 , AlMg3, EN-AW 5754>alu_5754
