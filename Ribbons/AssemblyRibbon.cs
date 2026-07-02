@@ -10,29 +10,27 @@ namespace SolidEdgeAdd_In.Ribbons
             var tab = AddTab("Dodatki"); var metalSheetGroup = tab.AddGroup("Blachy"); var excelGroup = tab.AddGroup("Excel"); var propertiesGroup = tab.AddGroup("Właściwości i zmienne");
 
             /*---"BLACHY"---*/
-            var SaveDxfOfPsmButton = new RibbonButton(4)
+            var SaveDxfOfPsmButton = new RibbonButton(6)
             {
                 Label = "Zapisz DXFy blach.",
                 ScreenTip = "Zapisuje DXFy wszystkich blach z otwartego złożenia.",
-                SuperTip = "Zapisane zostaną DXY wszystkich blach (psm) z otwartego złożenia, w tej samej lokalizacji."
+                SuperTip = "Zapisane zostaną DXFy wszystkich blach (psm) z otwartego złożenia, w tej samej lokalizacji."
             };
             SaveDxfOfPsmButton.Click += (control) => { var assembly = (SolidEdgeAssembly.AssemblyDocument)application.ActiveDocument; SaveDxfOfPsm.AddIn(assembly);};
             metalSheetGroup.AddControl(SaveDxfOfPsmButton);
 
-
             /*---"BLACHY"---*/
-            var SaveDxfOfPartsAndPsmButton = new RibbonButton(5)
+            var SaveDxfOfPartsAndPsmButton = new RibbonButton(7)
             {
-                Label = "Zapisz DXy części i blach.",
+                Label = "Zapisz DFXy części i blach.",
                 ScreenTip = "Zapisuje DXFy wszystkich części (par) i blach (psm) z otwartego złożenia.",
-                SuperTip = "Zapisane zostaną DXy wszystkich części (par) i blach (psm) z otwartego złożenia, w tej samej lokalizacji."
+                SuperTip = "Zapisane zostaną DXFy wszystkich części (par) i blach (psm) z otwartego złożenia, w tej samej lokalizacji."
             };
             SaveDxfOfPartsAndPsmButton.Click += (control) => { var assembly = (SolidEdgeAssembly.AssemblyDocument)application.ActiveDocument; SaveDxfOfPartsAndPsm.AddIn(assembly);};
             metalSheetGroup.AddControl(SaveDxfOfPartsAndPsmButton);
 
-
             /*---"EXCEL"---*/
-            var ExportPartsListButton = new RibbonButton(6)
+            var ExportPartsListButton = new RibbonButton(8)
             {
                 Label = "Eksportuj listę części z rysunku do Excela.",
                 ScreenTip = "Zapisuje listę części z rysunku otwartego złożenia do Excela.",
@@ -41,9 +39,8 @@ namespace SolidEdgeAdd_In.Ribbons
             ExportPartsListButton.Click += (control) => { var assembly = (SolidEdgeAssembly.AssemblyDocument)application.ActiveDocument; ExportPartsList.AddIn(assembly);};
             excelGroup.AddControl(ExportPartsListButton);
 
-
             /*---"WŁAŚCIWOŚCI i ZMIENNE"---*/
-            var SetCountPropertyButton = new RibbonButton(8)
+            var SetCountPropertyButton = new RibbonButton(9)
             {
                 Label = "Dodaj właściwość ilości.",
                 ScreenTip = "Dodaje nową właściwość (ilość) dla każdego wystąpienia z typem A,B,C.",
@@ -51,8 +48,9 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             SetCountPropertyButton.Click += (control) => { var assembly = (SolidEdgeAssembly.AssemblyDocument)application.ActiveDocument; SetCountProperty.AddIn(assembly); };
             propertiesGroup.AddControl(SetCountPropertyButton);
+
             /*---"WŁAŚCIWOŚCI i ZMIENNE"---*/
-            var PreparePartsAndMetalSheetsButton = new RibbonButton(9)
+            var PreparePartsAndMetalSheetsButton = new RibbonButton(10)
             {
                 Label = "Przygotuj części tego złożenia.",
                 ScreenTip = "Przygotuj zmienne części i ich typy.",

@@ -17,6 +17,19 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             SaveFlatPatternAsDxfButton.Click += (control) => { var part = (SolidEdgePart.PartDocument)application.ActiveDocument;SaveFlatPatternAsDxf.AddIn(part);};
             metalSheetGroup.AddControl(SaveFlatPatternAsDxfButton);
+
+            /*---"ZAPIS"---*/
+            var savingGroup = tab.AddGroup("Zapis");
+            var SaveAsStepButton = new RibbonButton(3)
+            {
+                Label = "Zapisz plik STEP.",
+                ScreenTip = "Zapisuje otwarty plik jako STEP.",
+                SuperTip = "Zapisany zostanie STEP otwartego pliku, w tej samej lokalizacji."
+             };
+            SaveAsStepButton.Click += (control) => { var part = (SolidEdgePart.PartDocument)application.ActiveDocument; SaveAsStep.AddIn(part); };
+            savingGroup.AddControl(SaveAsStepButton);
+
+
         }
     }
 }

@@ -130,6 +130,70 @@ namespace SolidEdgeAdd_In.Utils
             return (decision, dxfPathEdited);
         }
 
+        public static (bool decision, string stepPath) GetDecisionAndEditedStepPath(string stepPath)
+        {
+            bool decision = false;
+            string stepPathEdited = stepPath;
+
+            using (Form prompt = new Form())
+            {
+                prompt.Width = 800;
+                prompt.Height = 200;
+                prompt.FormBorderStyle = FormBorderStyle.FixedDialog;
+                prompt.Text = "Czy wykonać zapis pliku STEP?";
+                prompt.StartPosition = FormStartPosition.CenterScreen;
+
+                Label label = new Label()
+                {
+                    Left = 20,
+                    Top = 20,
+                    Width = 740,
+                    Text = "Wygenerowana ścieżka (do edycji):"
+                };
+
+                TextBox textBox = new TextBox()
+                {
+                    Left = 20,
+                    Top = 50,
+                    Width = 740,
+                    Text = stepPath
+                };
+
+                Button yesButton = new Button()
+                {
+                    Text = "Tak",
+                    Left = 550,
+                    Width = 100,
+                    Top = 100,
+                    DialogResult = DialogResult.Yes
+                };
+
+                Button noButton = new Button()
+                {
+                    Text = "Nie",
+                    Left = 660,
+                    Width = 100,
+                    Top = 100,
+                    DialogResult = DialogResult.No
+                };
+
+                prompt.Controls.Add(label);
+                prompt.Controls.Add(textBox);
+                prompt.Controls.Add(yesButton);
+                prompt.Controls.Add(noButton);
+                prompt.AcceptButton = yesButton;
+                prompt.CancelButton = noButton;
+
+                if (prompt.ShowDialog() == DialogResult.Yes)
+                {
+                    decision = true;
+                    stepPathEdited = textBox.Text;
+                }
+            }
+
+            return (decision, stepPathEdited);
+        }
+
         private static string PartsListHelper(List<string> savedSettings)
         {
             string selected = null;

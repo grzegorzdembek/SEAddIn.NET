@@ -1,6 +1,7 @@
+using SolidEdgeAssembly;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System;
 
 namespace SolidEdgeAdd_In.Utils
 {
@@ -10,21 +11,25 @@ namespace SolidEdgeAdd_In.Utils
         {
             mainDir = mainDir.TrimEnd('\\', '/');
 
-            foreach (SolidEdgeAssembly.Occurrence occurrence in occurrences)
+            for (int i = 1; i <= occurrences.Count; i++)
             {
+                SolidEdgeAssembly.Occurrence occurrence = null;
                 SolidEdgeFramework.SolidEdgeDocument doc = null;
                 SolidEdgePart.SheetMetalDocument sheetMetal = null;
                 SolidEdgePart.PartDocument part = null;
                 SolidEdgeAssembly.AssemblyDocument subAssembly = null;
+
                 try
                 {
+                    occurrence = occurrences.Item(i);
+
                     doc = (SolidEdgeFramework.SolidEdgeDocument)occurrence.OccurrenceDocument;
 
                     if (doc is SolidEdgePart.PartDocument pDoc)
                     {
                         part = pDoc;
                         string partPath = part.FullName;
-                        string partDir = Path.GetDirectoryName(partPath);
+                        string partDir = System.IO.Path.GetDirectoryName(partPath);
                         if (string.IsNullOrEmpty(partDir)) continue;
                         partDir = partDir.TrimEnd('\\', '/');
                         if (string.Equals(mainDir, partDir, StringComparison.OrdinalIgnoreCase)) partsAndMetalSheets.Add(partPath);
@@ -33,7 +38,7 @@ namespace SolidEdgeAdd_In.Utils
                     {
                         sheetMetal = smDoc;
                         string metalSheetPath = sheetMetal.FullName;
-                        string metalSheetDir = Path.GetDirectoryName(metalSheetPath);
+                        string metalSheetDir = System.IO.Path.GetDirectoryName(metalSheetPath);
                         metalSheetDir = metalSheetDir.TrimEnd('\\', '/');
                         if (string.Equals(mainDir, metalSheetDir, StringComparison.OrdinalIgnoreCase)) partsAndMetalSheets.Add(metalSheetPath);
                     }
@@ -52,19 +57,25 @@ namespace SolidEdgeAdd_In.Utils
                     CoreUtils.ReleaseCom(ref sheetMetal);
                     CoreUtils.ReleaseCom(ref part);
                     CoreUtils.ReleaseCom(ref doc);
+                    CoreUtils.ReleaseCom(ref occurrence);
                 }
             }
         }
 
         public static void MetalSheets(SolidEdgeAssembly.Occurrences occurrences, Dictionary<string, int> metalSheets)
         {
-            foreach (SolidEdgeAssembly.Occurrence occurrence in occurrences)
+            for (int i = 1; i <= occurrences.Count; i++)
             {
+                SolidEdgeAssembly.Occurrence occurrence = null;
                 SolidEdgeFramework.SolidEdgeDocument doc = null;
                 SolidEdgePart.SheetMetalDocument sheetMetal = null;
-                SolidEdgeAssembly.AssemblyDocument subAssembly = null;
+                SolidEdgeAssembly.AssemblyDocument subAssembly = null;              
+
                 try
                 {
+                    occurrence = occurrences.Item(i);
+                    if (occurrence.IncludeInBom == false) { continue; }
+
                     doc = (SolidEdgeFramework.SolidEdgeDocument)occurrence.OccurrenceDocument;
                     if (doc is SolidEdgePart.SheetMetalDocument smDoc)
                     {
@@ -91,59 +102,26 @@ namespace SolidEdgeAdd_In.Utils
                     CoreUtils.ReleaseCom(ref sheetMetal);
                     CoreUtils.ReleaseCom(ref subAssembly);
                     CoreUtils.ReleaseCom(ref doc);
-                }
-            }
-        }
-
-        public static void Parts(SolidEdgeAssembly.Occurrences occurrences, Dictionary<string, int> parts)
-        {
-            foreach (SolidEdgeAssembly.Occurrence occurrence in occurrences)
-            {
-                SolidEdgeFramework.SolidEdgeDocument doc = null;
-                SolidEdgePart.PartDocument part = null;
-                SolidEdgeAssembly.AssemblyDocument subAssembly = null;
-                try
-                {
-                    doc = (SolidEdgeFramework.SolidEdgeDocument)occurrence.OccurrenceDocument;
-                    if (doc is SolidEdgePart.PartDocument pDoc)
-                    {
-                        part = pDoc;
-                        string partPath = part.FullName;
-
-                        if (!PropertyProvider.IsTypeB(partPath)) continue;
-
-                        if (parts.ContainsKey(partPath)) parts[partPath]++;
-                        else parts[partPath] = 1;
-                    }
-                    else if (doc is SolidEdgeAssembly.AssemblyDocument asmDoc)
-                    {
-                        subAssembly = asmDoc;
-                        string subAsmPath = subAssembly.FullName;
-
-                        if (!PropertyProvider.IsTypeA(subAsmPath)) continue;
-                        Parts(subAssembly.Occurrences, parts);
-                    }
-                }
-                catch { continue; }
-                finally
-                {
-                    CoreUtils.ReleaseCom(ref subAssembly);
-                    CoreUtils.ReleaseCom(ref part);
-                    CoreUtils.ReleaseCom(ref doc);
+                    CoreUtils.ReleaseCom(ref occurrence);
                 }
             }
         }
 
         public static void PartsAndMetalSheets(SolidEdgeAssembly.Occurrences occurrences, Dictionary<string, int> partsAndMetalSheets)
         {
-            foreach (SolidEdgeAssembly.Occurrence occurrence in occurrences)
+            for (int i = 1; i <= occurrences.Count; i++)
             {
+                SolidEdgeAssembly.Occurrence occurrence = null;
                 SolidEdgeFramework.SolidEdgeDocument doc = null;
                 SolidEdgePart.SheetMetalDocument sheetMetal = null;
                 SolidEdgePart.PartDocument part = null;
                 SolidEdgeAssembly.AssemblyDocument subAssembly = null;
+
                 try
                 {
+                    occurrence = occurrences.Item(i);
+                    if (occurrence.IncludeInBom == false) { continue; }
+
                     doc = (SolidEdgeFramework.SolidEdgeDocument)occurrence.OccurrenceDocument;
                     if (doc is SolidEdgePart.PartDocument pDoc)
                     {
@@ -181,20 +159,25 @@ namespace SolidEdgeAdd_In.Utils
                     CoreUtils.ReleaseCom(ref sheetMetal);
                     CoreUtils.ReleaseCom(ref part);
                     CoreUtils.ReleaseCom(ref doc);
+                    CoreUtils.ReleaseCom(ref occurrence);
                 }
             }
         }
 
         public static void AllOccurrences(SolidEdgeAssembly.Occurrences occurrences, Dictionary<string, int> allOccurrences)
         {
-            foreach (SolidEdgeAssembly.Occurrence occurrence in occurrences)
+            for (int i = 1; i <= occurrences.Count; i++)
             {
+                SolidEdgeAssembly.Occurrence occurrence = null;
                 SolidEdgeFramework.SolidEdgeDocument doc = null;
                 SolidEdgePart.PartDocument part = null;
                 SolidEdgePart.SheetMetalDocument sheetMetal = null;
                 SolidEdgeAssembly.AssemblyDocument subAssembly = null;
                 try
                 {
+                    occurrence = occurrences.Item(i);
+                    //if (occurrence.IncludeInBom == false) { continue; }
+
                     doc = (SolidEdgeFramework.SolidEdgeDocument)occurrence.OccurrenceDocument;
                     if (doc is SolidEdgePart.PartDocument pDoc)
                     {
@@ -232,10 +215,10 @@ namespace SolidEdgeAdd_In.Utils
                     CoreUtils.ReleaseCom(ref sheetMetal);
                     CoreUtils.ReleaseCom(ref part);
                     CoreUtils.ReleaseCom(ref doc);
+                    CoreUtils.ReleaseCom(ref occurrence);
                 }
             }
         }
     }
-
 }
 

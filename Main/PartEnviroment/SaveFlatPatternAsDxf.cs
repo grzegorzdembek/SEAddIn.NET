@@ -18,5 +18,4 @@ namespace SolidEdgeAdd_In.Main.PartEnviroment
             catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
         }
     }
-
 }

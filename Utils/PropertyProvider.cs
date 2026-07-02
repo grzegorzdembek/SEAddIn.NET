@@ -238,6 +238,36 @@ namespace SolidEdgeAdd_In.Utils
             }
         }
 
+        public static string GetMaterialName(SolidEdgeFramework.SolidEdgeDocument document)
+        {
+            SolidEdgeFramework.PropertySets propertySets = null;
+            SolidEdgeFramework.Properties properties = null;
+            SolidEdgeFramework.Property property = null;
+            try
+            {
+                propertySets = (SolidEdgeFramework.PropertySets)document.Properties;
+                properties = (SolidEdgeFramework.Properties)propertySets.Item("Custom");
+                property = (SolidEdgeFramework.Property)properties.Item("material_nazwa");
+
+                dynamic dynProperty = property;
+                object rawValue = dynProperty.Value;
+
+                if (rawValue != null)
+                {
+                    return rawValue.ToString();
+                }
+
+                return null;
+            }
+            catch { return null; }
+            finally
+            {
+                CoreUtils.ReleaseCom(ref property);
+                CoreUtils.ReleaseCom(ref properties);
+                CoreUtils.ReleaseCom(ref propertySets);
+            }
+        }
+
         public static int GetCount(string filePath)
         {
             SolidEdgeFileProperties.PropertySets propertySets = null;
