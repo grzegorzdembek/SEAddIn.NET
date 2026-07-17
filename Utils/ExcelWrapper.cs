@@ -1,28 +1,25 @@
-using Excel = Microsoft.Office.Interop.Excel; 
-using System.Drawing;
-using System;
-
 namespace SolidEdgeAdd_In.Utils
 {
     public class ExcelWrapper
     {
-        public static int GetColumnNumber(Excel.Range range, string name)
+        public static int GetColumnNumber(ExcelRange range, string name)
         {
-            Excel.Range firstRow = null;
-            Excel.Range cells = null;
+            ExcelRange firstRow = null;
             try
             {
                 firstRow = range.Rows[1];
-                cells = firstRow.Cells;
 
-                foreach (Excel.Range cell in cells)
+                object[,] rowData = (object[,])firstRow.Value2;
+
+                if (rowData != null)
                 {
-                    string value = cell.Value?.ToString();
-
-                    if (value == name)
+                    int colCount = rowData.GetLength(1);
+                    for (int i = 1; i <= colCount; i++)
                     {
-                        int index = cell.Column;
-                        return index;
+                        if (rowData[1, i]?.ToString() == name)
+                        {
+                            return i;
+                        }
                     }
                 }
                 return 0;
@@ -30,20 +27,19 @@ namespace SolidEdgeAdd_In.Utils
             catch { return 0; }
             finally
             {
-                CoreUtils.ReleaseCom(ref cells);
                 CoreUtils.ReleaseCom(ref firstRow);
             }
         }
 
-        public static void Styles(Excel.Workbook workbook)
+        public static void Styles(ExcelWorkbook workbook)
         {
-            Excel.Styles styles = null;
-            Excel.Style assemblyStyle = null;
-            Excel.Style partStyle = null;
-            Excel.Style steelmakingStyle = null;
-            Excel.Style boughtStyle = null;
-            Excel.Style normalStyle = null;
-            Excel.Style sheetMetalStyle = null;
+            ExcelStyles styles = null;
+            ExcelStyle assemblyStyle = null;
+            ExcelStyle partStyle = null;
+            ExcelStyle steelmakingStyle = null;
+            ExcelStyle boughtStyle = null;
+            ExcelStyle normalStyle = null;
+            ExcelStyle sheetMetalStyle = null;
 
             try
             {
@@ -91,50 +87,29 @@ namespace SolidEdgeAdd_In.Utils
             }
         }
 
-        public static void Type(Excel.Worksheet worksheet, int typeNumber)
+        public static void TypeMemory(object[,] data, int typeNumber, int rowCount)
         {
-            Excel.Range range = null;
-            Excel.Range rows = null;
-            Excel.Range columns = null;
-            Excel.Range firstRow = null;
-            try
+            for (int i = 2; i <= rowCount; i++)
             {
-                range = worksheet.UsedRange;
-                rows = range.Rows;
-                columns = range.Columns;
-                firstRow = rows[1];
+                object rawValue = data[i, typeNumber];
+                if (rawValue == null) continue;
 
-                if (typeNumber == 0) return;
-                foreach (Excel.Range row in rows)
-                {
-                    if (row.Row == firstRow.Row) continue;
-
-                    string value = GetValue(range, row.Row, typeNumber); if (value == null) continue;
-                    var cell = row.Cells[1, typeNumber];
-
-                    if (value == "A") { cell.Value = "Złożenie"; continue; }
-                    if (value == "C") { cell.Value = "Część"; continue; }
-                    if (value == "K") { cell.Value = "Hutnicze"; continue; }
-                    if (value == "H") { cell.Value = "Handlowe"; continue; }
-                    if (value == "N") { cell.Value = "Normalia"; continue; }
-                    if (value == "B") { cell.Value = "Blacha"; continue; }
-                }
-            }
-            finally
-            {
-                CoreUtils.ReleaseCom(ref firstRow);
-                CoreUtils.ReleaseCom(ref columns);
-                CoreUtils.ReleaseCom(ref rows);
-                CoreUtils.ReleaseCom(ref range);
+                string value = rawValue.ToString().Trim();
+                if (value == "A") data[i, typeNumber] = "Złożenie";
+                else if (value == "C") data[i, typeNumber] = "Część";
+                else if (value == "K") data[i, typeNumber] = "Hutnicze";
+                else if (value == "H") data[i, typeNumber] = "Handlowe";
+                else if (value == "N") data[i, typeNumber] = "Normalia";
+                else if (value == "B") data[i, typeNumber] = "Blacha";
             }
         }
 
-        public static void Colors(Excel.Worksheet worksheet, int typeNumber)
+        public static void Colors(ExcelWorksheet worksheet, int typeNumber)
         {
-            Excel.Range range = null;
-            Excel.Range dataRange = null;
-            Excel.Range columns = null;
-            Excel.FormatConditions conditions = null;
+            ExcelRange range = null;
+            ExcelRange dataRange = null;
+            ExcelRange columns = null;
+            ExcelFormatConditions conditions = null;
             try
             {
                 range = worksheet.UsedRange;
@@ -146,7 +121,7 @@ namespace SolidEdgeAdd_In.Utils
                 dataRange = range.Range[range.Cells[2, 1], range.Cells[lastRow, lastCol]];
                 columns = worksheet.UsedRange.Columns;
 
-                Excel.Range anchorCell = worksheet.Cells[2, typeNumber];
+                ExcelRange anchorCell = worksheet.Cells[2, typeNumber];
                 string address = anchorCell.Address[RowAbsolute: false, ColumnAbsolute: true];
 
                 conditions = dataRange.FormatConditions;
@@ -168,50 +143,25 @@ namespace SolidEdgeAdd_In.Utils
             }
         }
 
-        public static void Count(Excel.Worksheet worksheet, int multiplier, int countNumber)
+        public static void CountMemory(object[,] data, int multiplier, int countNumber, int rowCount)
         {
-            Excel.Range range = null;
-            Excel.Range rows = null;
-            try
+            for (int i = 3; i <= rowCount; i++)
             {
-                range = worksheet.UsedRange;
-                rows = range.Rows;
-            
-                int rowCount = rows.Count;
-                for (int i = 3; i <= rowCount; i++)
+                object rawValue = data[i, countNumber];
+                if (rawValue != null && int.TryParse(rawValue.ToString(), out int currentQty))
                 {
-                    Excel.Range cell = null;
-                    try
-                    {
-                        cell = (Excel.Range)range.Cells[i, countNumber];
-                        object cellValue = cell.Value;
-
-                        if (cellValue != null && int.TryParse(cellValue.ToString(), out int currentQty))
-                        {
-                            int newQty = currentQty * multiplier;
-                            cell.Value = newQty;
-                        }
-                    }
-                    finally
-                    {
-                        CoreUtils.ReleaseCom(ref cell);
-                    }
+                    data[i, countNumber] = currentQty * multiplier;
                 }
-            }
-            finally
-            {
-                CoreUtils.ReleaseCom(ref rows);
-                CoreUtils.ReleaseCom(ref range);
             }
         }
 
-        public static void Edit(Excel.Worksheet worksheet)
+        public static void Edit(ExcelWorksheet worksheet)
         {
-            Excel.Range range = null;
-            Excel.Range rows = null;
-            Excel.Range columns = null;
-            Excel.Range firstRow = null;
-            Excel.Range cells = null;
+            ExcelRange range = null;
+            ExcelRange rows = null;
+            ExcelRange columns = null;
+            ExcelRange firstRow = null;
+            ExcelRange cells = null;
             try
             {
                 range = worksheet.UsedRange;
@@ -219,15 +169,19 @@ namespace SolidEdgeAdd_In.Utils
                 columns = range.Columns;
                 firstRow = rows[1];
                 cells = range.Cells;
-                range.HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter;
-                range.VerticalAlignment = Excel.XlVAlign.xlVAlignCenter;
-                range.Borders.LineStyle = Excel.XlLineStyle.xlContinuous;
-                range.Borders.Weight = Excel.XlBorderWeight.xlThin;
-                range.Borders.Color = (int)Excel.XlRgbColor.rgbBlack;
+
+                range.HorizontalAlignment = Microsoft.Office.Interop.Excel.XlHAlign.xlHAlignCenter;
+                range.VerticalAlignment = Microsoft.Office.Interop.Excel.XlVAlign.xlVAlignCenter;
+                range.Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                range.Borders.Weight = Microsoft.Office.Interop.Excel.XlBorderWeight.xlThin;
+                range.Borders.Color = (int)Microsoft.Office.Interop.Excel.XlRgbColor.rgbBlack;
+
                 firstRow.RowHeight = 25;
-                firstRow.Interior.Color = (int)Excel.XlRgbColor.rgbLightGray;
+                firstRow.Interior.Color = (int)Microsoft.Office.Interop.Excel.XlRgbColor.rgbLightGray;
                 firstRow.Font.Bold = true;
-                foreach (Excel.Range column in columns) { column.AutoFit(); }
+
+                int colCount = columns.Count;
+                columns.AutoFit();
             }
             finally
             {
@@ -239,13 +193,14 @@ namespace SolidEdgeAdd_In.Utils
             }
         }
 
-        public static string GetValue(Excel.Range range, int row, int column)
+        public static string GetValue(ExcelRange range, int row, int column)
         {
-            Excel.Range cells = null;
+            ExcelRange cells = null;
             string value = null;
             try
             {
-                cells = range.Cells; object objectValue = cells[row, column].Value;
+                cells = range.Cells;
+                object objectValue = cells[row, column].Value;
                 if (objectValue != null) value = objectValue?.ToString()?.Trim();
                 return value;
             }
@@ -253,18 +208,17 @@ namespace SolidEdgeAdd_In.Utils
             finally { CoreUtils.ReleaseCom(ref cells); }
         }
 
-        private static void Rule(Excel.FormatConditions conditions, string address, string criteria, Color color)
+        private static void Rule(ExcelFormatConditions conditions, string address, string criteria, Color color)
         {
-            Excel.FormatCondition rule = null;
+            ExcelFormatCondition rule = null;
             try
             {
                 string formula = $"={address}=\"{criteria}\"";
-                rule = (Excel.FormatCondition)conditions.Add(Excel.XlFormatConditionType.xlExpression, Formula1: formula);
+                rule = (ExcelFormatCondition)conditions.Add(Microsoft.Office.Interop.Excel.XlFormatConditionType.xlExpression, Formula1: formula);
                 rule.Interior.Color = ColorTranslator.ToOle(color);
                 rule.StopIfTrue = false;
             }
             finally { CoreUtils.ReleaseCom(ref rule); }
         }
     }
-
 }

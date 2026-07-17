@@ -1,105 +1,221 @@
 using SolidEdgeAssembly;
-using System;
-using System.Collections.Generic;
-using System.IO;
+using SolidEdgePart;
 
 namespace SolidEdgeAdd_In.Utils
 {
     public class AssemblyTreeWalker
     {
-        public static void PartsAndMetalSheets(SolidEdgeAssembly.Occurrences occurrences, List<string> partsAndMetalSheets, string mainDir)
+        public static void OccurrencesForExportDxfs(SeOccurrences assemblyOccurrences, Dictionary<string, FileData> occurrences, DxfExportLogger logger)
         {
-            mainDir = mainDir.TrimEnd('\\', '/');
+            int count = assemblyOccurrences.Count;
 
-            for (int i = 1; i <= occurrences.Count; i++)
+            for (int i = 1; i <= count; i++)
             {
-                SolidEdgeAssembly.Occurrence occurrence = null;
-                SolidEdgeFramework.SolidEdgeDocument doc = null;
-                SolidEdgePart.SheetMetalDocument sheetMetal = null;
-                SolidEdgePart.PartDocument part = null;
-                SolidEdgeAssembly.AssemblyDocument subAssembly = null;
-
+                SeOccurrence occurrence = null;
+                SeDocument doc = null;
+                SeAssembly subAssembly = null;
                 try
                 {
-                    occurrence = occurrences.Item(i);
+                    occurrence = (SeOccurrence)assemblyOccurrences.Item(i);
 
-                    doc = (SolidEdgeFramework.SolidEdgeDocument)occurrence.OccurrenceDocument;
+                    if (occurrence.IncludeInBom == false)
+                    {
+                        logger.LogSkip("Nieznany Plik", "Plik wykluczony z zestawienia");
+                        continue;
+                    }
 
-                    if (doc is SolidEdgePart.PartDocument pDoc)
+                    doc = (SeDocument)occurrence.OccurrenceDocument;
+
+                    string path = null;
+
+                    try
                     {
-                        part = pDoc;
-                        string partPath = part.FullName;
-                        string partDir = System.IO.Path.GetDirectoryName(partPath);
-                        if (string.IsNullOrEmpty(partDir)) continue;
-                        partDir = partDir.TrimEnd('\\', '/');
-                        if (string.Equals(mainDir, partDir, StringComparison.OrdinalIgnoreCase)) partsAndMetalSheets.Add(partPath);
+                        path = doc.FullName;
                     }
-                    else if (doc is SolidEdgePart.SheetMetalDocument smDoc)
+                    catch
                     {
-                        sheetMetal = smDoc;
-                        string metalSheetPath = sheetMetal.FullName;
-                        string metalSheetDir = System.IO.Path.GetDirectoryName(metalSheetPath);
-                        metalSheetDir = metalSheetDir.TrimEnd('\\', '/');
-                        if (string.Equals(mainDir, metalSheetDir, StringComparison.OrdinalIgnoreCase)) partsAndMetalSheets.Add(metalSheetPath);
+                        logger.LogSkip("Nieznany Plik", "Brak dostępu do pliku");
+                        continue;
                     }
-                    else if (doc is SolidEdgeAssembly.AssemblyDocument asmDoc)
+
+                    string name = System.IO.Path.GetFileNameWithoutExtension(path);
+
+                    if (string.IsNullOrEmpty(path))
+                    {
+                        logger.LogSkip(name, "Plik nie istnieje");
+                        continue;
+                    }
+
+                    if (doc is SePart || doc is SeSheetMetal)
+                    {            
+                        using var properties = new PropertyProvider(doc);
+
+                        if (!properties.IsTypeB)
+                        {
+                            logger.LogSkip(name, "Brak Typu B");
+                            continue;
+                        }
+
+                        if (!properties.HasMaterial)
+                        {
+                            logger.LogSkip(name, "Brak zapisanego materiału");
+                            continue;
+                        }
+
+                        if (!properties.HasThickness)
+                        {
+                            logger.LogSkip(name, "Brak grubości blachy");
+                            continue;
+                        }
+
+                        if (!properties.IsStatusAvailable)
+                        {
+                            logger.LogSkip(name, "Status pliku jest niedostępny");
+                            continue;
+                        }
+
+                        if (properties.HasDxfDate)
+                        {
+                            logger.LogSkip(name, "Plik ma właściwość Dxf");
+                            continue;
+                        }
+
+                        if (!occurrences.ContainsKey(path))
+                        {
+                            occurrences[path] = new FileData
+                            {
+                                OccurrenceCount = 1,
+                                Material = properties.Material,
+                                Thickness = properties.Thickness,
+                                Name = name,
+                                SizeX = properties.SizeX,
+                                SizeY = properties.SizeY
+                            };
+                        }
+                        else
+                        {
+                            occurrences[path].OccurrenceCount++;
+                        }
+                    }
+                    else if (doc is SeAssembly asmDoc)
                     {
                         subAssembly = asmDoc;
-                        string subAsmPath = subAssembly.FullName;
-                        if (!PropertyProvider.IsTypeA(subAsmPath)) continue;
-                        PartsAndMetalSheets(subAssembly.Occurrences, partsAndMetalSheets, mainDir);
+                        bool isTypeA = false;
+
+                        using var properties = new PropertyProvider(doc);
+                        isTypeA = properties.IsTypeA;
+                     
+                        if (!isTypeA)
+                        {
+                            logger.LogSkip(name, "Złożenie pominęto (Nie jest Typem A)");
+                            continue;
+                        }
+                        OccurrencesForExportDxfs(subAssembly.Occurrences, occurrences, logger);
                     }
                 }
-                catch { continue; }
+                catch (Exception ex)
+                { 
+                    logger.LogError("Nieznany obiekt", $"Błąd podczas skanowania drzewa złożenia: {ex.Message}"); 
+                    continue; 
+                }
                 finally
                 {
                     CoreUtils.ReleaseCom(ref subAssembly);
-                    CoreUtils.ReleaseCom(ref sheetMetal);
-                    CoreUtils.ReleaseCom(ref part);
                     CoreUtils.ReleaseCom(ref doc);
                     CoreUtils.ReleaseCom(ref occurrence);
                 }
             }
         }
 
-        public static void MetalSheets(SolidEdgeAssembly.Occurrences occurrences, Dictionary<string, int> metalSheets)
+        public static void OccurrencesForSetCount(SeOccurrences assemblyOccurrences, Dictionary<string, FileData> occurrences)
         {
-            for (int i = 1; i <= occurrences.Count; i++)
+            int count = assemblyOccurrences.Count;
+            for (int i = 1; i <= count; i++)
             {
-                SolidEdgeAssembly.Occurrence occurrence = null;
-                SolidEdgeFramework.SolidEdgeDocument doc = null;
-                SolidEdgePart.SheetMetalDocument sheetMetal = null;
-                SolidEdgeAssembly.AssemblyDocument subAssembly = null;              
+                SeOccurrence occurrence = null;
+                SeDocument doc = null;
+                SeAssembly subAssembly = null;
 
                 try
                 {
-                    occurrence = occurrences.Item(i);
-                    if (occurrence.IncludeInBom == false) { continue; }
+                    occurrence = (SeOccurrence)assemblyOccurrences.Item(i);
+                    doc = (SeDocument)occurrence.OccurrenceDocument;
 
-                    doc = (SolidEdgeFramework.SolidEdgeDocument)occurrence.OccurrenceDocument;
-                    if (doc is SolidEdgePart.SheetMetalDocument smDoc)
+                    string path = null;
+
+                    try
                     {
-                        sheetMetal = smDoc;
-                        string metalSheetPath = sheetMetal.FullName;
-
-                        if (!PropertyProvider.IsTypeB(metalSheetPath)) continue;
-
-                        if (metalSheets.ContainsKey(metalSheetPath)) metalSheets[metalSheetPath]++;
-                        else metalSheets[metalSheetPath] = 1;
+                        path = doc.FullName;
                     }
-                    else if (doc is SolidEdgeAssembly.AssemblyDocument asmDoc)
+                    catch
+                    {
+                        continue;
+                    }
+
+                    string name = System.IO.Path.GetFileNameWithoutExtension(path);
+
+                    if (string.IsNullOrEmpty(path))
+                    {
+                        continue;
+                    }
+
+                    if (doc is SePart || doc is SeSheetMetal)
+                    {
+                        string filePath = doc.FullName;
+                        if (string.IsNullOrEmpty(filePath)) continue;
+
+                        if (!occurrences.ContainsKey(filePath))
+                        {
+                            
+                            using var properties = new PropertyProvider(doc);
+                            occurrences[filePath] = new FileData
+                            {
+                                Name = name,
+                                Type = properties.Type,
+                                Count = properties.Count,
+                                OccurrenceCount = 1
+                            };
+                        }
+                        else
+                        {
+                            occurrences[filePath].OccurrenceCount++;
+                        }
+                    }
+                    else if (doc is SeAssembly asmDoc)
                     {
                         subAssembly = asmDoc;
                         string subAsmPath = subAssembly.FullName;
+                        if (string.IsNullOrEmpty(subAsmPath)) continue;
 
-                        if (!PropertyProvider.IsTypeA(subAsmPath)) continue;
-                        MetalSheets(subAssembly.Occurrences, metalSheets);
+                        bool isTypeA = false;
+
+                        if (!occurrences.ContainsKey(subAsmPath))
+                        {
+                            
+                            using var properties = new PropertyProvider(doc);
+                            occurrences[subAsmPath] = new FileData
+                            {
+                                Name = name,
+                                Type = properties.Type,
+                                Count = properties.Count,
+                                OccurrenceCount = 1
+                            };
+                            isTypeA = properties.IsTypeA;
+                        }
+                        else
+                        {
+                            occurrences[subAsmPath].OccurrenceCount++;
+                            isTypeA = occurrences[subAsmPath].Type == "A";
+                        }
+
+                        if (!isTypeA) continue;
+
+                        OccurrencesForSetCount(subAssembly.Occurrences, occurrences);
                     }
                 }
                 catch { continue; }
                 finally
                 {
-                    CoreUtils.ReleaseCom(ref sheetMetal);
                     CoreUtils.ReleaseCom(ref subAssembly);
                     CoreUtils.ReleaseCom(ref doc);
                     CoreUtils.ReleaseCom(ref occurrence);
@@ -107,113 +223,50 @@ namespace SolidEdgeAdd_In.Utils
             }
         }
 
-        public static void PartsAndMetalSheets(SolidEdgeAssembly.Occurrences occurrences, Dictionary<string, int> partsAndMetalSheets)
+        public static void OccurrencesForExportPartsList(SeOccurrences assemblyOccurrences, Dictionary<string, int> occurrences)
         {
-            for (int i = 1; i <= occurrences.Count; i++)
+            int count = assemblyOccurrences.Count;
+            for (int i = 1; i <= count; i++)
             {
-                SolidEdgeAssembly.Occurrence occurrence = null;
-                SolidEdgeFramework.SolidEdgeDocument doc = null;
-                SolidEdgePart.SheetMetalDocument sheetMetal = null;
-                SolidEdgePart.PartDocument part = null;
-                SolidEdgeAssembly.AssemblyDocument subAssembly = null;
+                SeOccurrence occurrence = null;
+                SeDocument doc = null;
+                SeAssembly subAssembly = null;
 
                 try
                 {
-                    occurrence = occurrences.Item(i);
-                    if (occurrence.IncludeInBom == false) { continue; }
+                    occurrence = (SeOccurrence)assemblyOccurrences.Item(i);
+                    doc = (SeDocument)occurrence.OccurrenceDocument;
 
-                    doc = (SolidEdgeFramework.SolidEdgeDocument)occurrence.OccurrenceDocument;
-                    if (doc is SolidEdgePart.PartDocument pDoc)
+                    string path = doc.FullName;
+                    if (string.IsNullOrEmpty(path)) continue;
+
+                    if (doc is SePart || doc is SeSheetMetal)
                     {
-                        part = pDoc;
-                        string partPath = part.FullName;
-
-                        if (!PropertyProvider.IsTypeB(partPath)) continue;
-
-                        if (partsAndMetalSheets.ContainsKey(partPath)) partsAndMetalSheets[partPath]++;
-                        else partsAndMetalSheets[partPath] = 1;
+                        if (!occurrences.ContainsKey(path)) occurrences[path] = 1;
+                        else occurrences[path]++;
                     }
-                    else if (doc is SolidEdgePart.SheetMetalDocument smDoc)
-                    {
-                        sheetMetal = smDoc;
-                        string metalSheetPath = sheetMetal.FullName;
-
-                        if (!PropertyProvider.IsTypeB(metalSheetPath)) continue;
-
-                        if (partsAndMetalSheets.ContainsKey(metalSheetPath)) partsAndMetalSheets[metalSheetPath]++;
-                        else partsAndMetalSheets[metalSheetPath] = 1;
-                    }
-                    else if (doc is SolidEdgeAssembly.AssemblyDocument asmDoc)
+                    else if (doc is SeAssembly asmDoc)
                     {
                         subAssembly = asmDoc;
-                        string subAsmPath = subAssembly.FullName;
+                        bool isTypeA = false;
 
-                        if (!PropertyProvider.IsTypeA(subAsmPath)) continue;
-                        PartsAndMetalSheets(subAssembly.Occurrences, partsAndMetalSheets);
+                        using (var properties = new PropertyProvider(doc))
+                        {
+                            isTypeA = properties.IsTypeA;
+                        }
+
+                        if (!occurrences.ContainsKey(path)) occurrences[path] = 1;
+                        else occurrences[path]++;
+
+                        if (!isTypeA) continue;
+
+                        OccurrencesForExportPartsList(subAssembly.Occurrences, occurrences);
                     }
                 }
                 catch { continue; }
                 finally
                 {
                     CoreUtils.ReleaseCom(ref subAssembly);
-                    CoreUtils.ReleaseCom(ref sheetMetal);
-                    CoreUtils.ReleaseCom(ref part);
-                    CoreUtils.ReleaseCom(ref doc);
-                    CoreUtils.ReleaseCom(ref occurrence);
-                }
-            }
-        }
-
-        public static void AllOccurrences(SolidEdgeAssembly.Occurrences occurrences, Dictionary<string, int> allOccurrences)
-        {
-            for (int i = 1; i <= occurrences.Count; i++)
-            {
-                SolidEdgeAssembly.Occurrence occurrence = null;
-                SolidEdgeFramework.SolidEdgeDocument doc = null;
-                SolidEdgePart.PartDocument part = null;
-                SolidEdgePart.SheetMetalDocument sheetMetal = null;
-                SolidEdgeAssembly.AssemblyDocument subAssembly = null;
-                try
-                {
-                    occurrence = occurrences.Item(i);
-                    //if (occurrence.IncludeInBom == false) { continue; }
-
-                    doc = (SolidEdgeFramework.SolidEdgeDocument)occurrence.OccurrenceDocument;
-                    if (doc is SolidEdgePart.PartDocument pDoc)
-                    {
-                        part = pDoc;
-                        string partPath = part.FullName;
-
-                        if (allOccurrences.ContainsKey(partPath)) allOccurrences[partPath]++;
-                        else allOccurrences[partPath] = 1;
-                    }
-                    else if (doc is SolidEdgePart.SheetMetalDocument smDoc)
-                    {
-                        sheetMetal = smDoc;
-                        string sheetMetalPath = sheetMetal.FullName;
-
-                        if (allOccurrences.ContainsKey(sheetMetalPath)) allOccurrences[sheetMetalPath]++;
-                        else allOccurrences[sheetMetalPath] = 1;
-                    }
-                    else if (doc is SolidEdgeAssembly.AssemblyDocument asmDoc)
-                    {
-                        subAssembly = asmDoc;
-                        string subAsmPath = subAssembly.FullName;
-
-                        if (allOccurrences.ContainsKey(subAsmPath)) allOccurrences[subAsmPath]++;
-                        else allOccurrences[subAsmPath] = 1;
-
-                        if (!PropertyProvider.IsTypeA(subAsmPath)) continue;
-
-                        AllOccurrences(subAssembly.Occurrences, allOccurrences);
-                    }
-                }
-                catch { continue; }
-                finally
-                {
-                    CoreUtils.ReleaseCom(ref subAssembly);
-                    CoreUtils.ReleaseCom(ref sheetMetal);
-                    CoreUtils.ReleaseCom(ref part);
                     CoreUtils.ReleaseCom(ref doc);
                     CoreUtils.ReleaseCom(ref occurrence);
                 }
@@ -221,4 +274,3 @@ namespace SolidEdgeAdd_In.Utils
         }
     }
 }
-

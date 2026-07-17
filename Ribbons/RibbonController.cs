@@ -1,19 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
-using System.Runtime.InteropServices.ComTypes;
-using SolidEdgeFramework;
-
 namespace SolidEdgeAdd_In.Ribbons
 {
     public sealed class RibbonController : IDisposable, ISEAddInEventsEx
     {
-        private SolidEdgeAddIn _addIn;
-        private List<Ribbon> _ribbons = new List<Ribbon>();
+        private readonly SolidEdgeAddIn _addIn;
+        private readonly List<Ribbon> _ribbons = new();
         private bool _disposed = false;
-        private Dictionary<IConnectionPoint, int> _connectionPoints = new Dictionary<IConnectionPoint, int>();
+        private readonly Dictionary<IConnectionPoint, int> _connectionPoints = new();
 
         internal RibbonController(SolidEdgeAddIn addIn)
         {

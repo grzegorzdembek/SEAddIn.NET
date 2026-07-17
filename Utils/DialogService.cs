@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Windows.Forms;
-using System.Reflection;
-
 namespace SolidEdgeAdd_In.Utils
 {
     public class DialogService
@@ -31,39 +26,41 @@ namespace SolidEdgeAdd_In.Utils
             return result == DialogResult.Yes;
         }
 
-        public static int GetMultiplier()
+        public static (bool isConfirmed, int multiplier) GetMultiplier()
         {
             int multiplier = 1;
+            bool isConfirmed = false;
 
-            using (Form prompt = new Form())
+            using var prompt = new Form
             {
-                prompt.Width = 300;
-                prompt.Height = 160;
-                prompt.FormBorderStyle = FormBorderStyle.FixedDialog;
-                prompt.Text = "Wprowadzanie danych";
-                prompt.StartPosition = FormStartPosition.CenterScreen;
-                prompt.MinimizeBox = false;
-                prompt.MaximizeBox = false;
+                Width = 300,
+                Height = 160,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Wprowadzanie danych",
+                StartPosition = FormStartPosition.CenterScreen,
+                MinimizeBox = false,
+                MaximizeBox = false
+            };
 
-                Label textLabel = new Label() { Left = 20, Top = 20, Text = "PODAJ MNOŻNIK:", AutoSize = true };
-                TextBox textBox = new TextBox() { Left = 20, Top = 50, Width = 240 };
-                Button confirmation = new Button() { Text = "OK", Left = 160, Width = 100, Top = 80, DialogResult = DialogResult.OK };
+            Label textLabel = new () { Left = 20, Top = 20, Text = "PODAJ MNOŻNIK:", AutoSize = true };
+            TextBox textBox = new () { Left = 20, Top = 50, Width = 240 };
+            Button confirmation = new () { Text = "OK", Left = 160, Width = 100, Top = 80, DialogResult = DialogResult.OK };
 
-                prompt.Controls.Add(textLabel);
-                prompt.Controls.Add(textBox);
-                prompt.Controls.Add(confirmation);
-                prompt.AcceptButton = confirmation;
+            prompt.Controls.Add(textLabel);
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(confirmation);
+            prompt.AcceptButton = confirmation;
 
-                if (prompt.ShowDialog() == DialogResult.OK)
+            if (prompt.ShowDialog() == DialogResult.OK)
+            {
+                if (int.TryParse(textBox.Text, out int result))
                 {
-                    if (int.TryParse(textBox.Text, out int result))
-                    {
-                        multiplier = result;
-                    }
+                    multiplier = result;
                 }
+                isConfirmed = true;
             }
 
-            return multiplier;
+            return (isConfirmed, multiplier);
         }
 
         public static (bool decision, string dxfPath) GetDecisionAndEditedDxfPath(string dxfPath)
@@ -71,60 +68,31 @@ namespace SolidEdgeAdd_In.Utils
             bool decision = false;
             string dxfPathEdited = dxfPath;
 
-            using (Form prompt = new Form())
+            using var prompt = new Form
             {
-                prompt.Width = 800;
-                prompt.Height = 200;
-                prompt.FormBorderStyle = FormBorderStyle.FixedDialog;
-                prompt.Text = "Czy wykonać zapis Dxf?";
-                prompt.StartPosition = FormStartPosition.CenterScreen;
+                Width = 800,
+                Height = 200,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Czy wykonać zapis Dxf?",
+                StartPosition = FormStartPosition.CenterScreen
+            };
 
-                Label label = new Label()
-                {
-                    Left = 20,
-                    Top = 20,
-                    Width = 740,
-                    Text = "Wygenerowana ścieżka (do edycji):"
-                };
+            Label label = new () { Left = 20, Top = 20, Width = 740, Text = "Wygenerowana ścieżka (do edycji):" };
+            TextBox textBox = new () { Left = 20, Top = 50, Width = 740, Text = dxfPath };
+            Button yesButton = new () { Text = "Tak", Left = 550, Width = 100, Top = 100, DialogResult = DialogResult.Yes };
+            Button noButton = new () { Text = "Nie", Left = 660, Width = 100, Top = 100, DialogResult = DialogResult.No };
 
-                TextBox textBox = new TextBox()
-                {
-                    Left = 20,
-                    Top = 50,
-                    Width = 740,
-                    Text = dxfPath
-                };
+            prompt.Controls.Add(label);
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(yesButton);
+            prompt.Controls.Add(noButton);
+            prompt.AcceptButton = yesButton;
+            prompt.CancelButton = noButton;
 
-                Button yesButton = new Button()
-                {
-                    Text = "Tak",
-                    Left = 550,
-                    Width = 100,
-                    Top = 100,
-                    DialogResult = DialogResult.Yes
-                };
-
-                Button noButton = new Button()
-                {
-                    Text = "Nie",
-                    Left = 660,
-                    Width = 100,
-                    Top = 100,
-                    DialogResult = DialogResult.No
-                };
-
-                prompt.Controls.Add(label);
-                prompt.Controls.Add(textBox);
-                prompt.Controls.Add(yesButton);
-                prompt.Controls.Add(noButton);
-                prompt.AcceptButton = yesButton;
-                prompt.CancelButton = noButton;
-
-                if (prompt.ShowDialog() == DialogResult.Yes)
-                {
-                    decision = true;
-                    dxfPathEdited = textBox.Text;
-                }
+            if (prompt.ShowDialog() == DialogResult.Yes)
+            {
+                decision = true;
+                dxfPathEdited = textBox.Text;
             }
 
             return (decision, dxfPathEdited);
@@ -135,60 +103,31 @@ namespace SolidEdgeAdd_In.Utils
             bool decision = false;
             string stepPathEdited = stepPath;
 
-            using (Form prompt = new Form())
+            using var prompt = new Form
             {
-                prompt.Width = 800;
-                prompt.Height = 200;
-                prompt.FormBorderStyle = FormBorderStyle.FixedDialog;
-                prompt.Text = "Czy wykonać zapis pliku STEP?";
-                prompt.StartPosition = FormStartPosition.CenterScreen;
+                Width = 800,
+                Height = 200,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Czy wykonać zapis pliku STEP?",
+                StartPosition = FormStartPosition.CenterScreen
+            };
 
-                Label label = new Label()
-                {
-                    Left = 20,
-                    Top = 20,
-                    Width = 740,
-                    Text = "Wygenerowana ścieżka (do edycji):"
-                };
+            Label label = new() { Left = 20, Top = 20, Width = 740, Text = "Wygenerowana ścieżka (do edycji):" };
+            TextBox textBox = new() { Left = 20, Top = 50, Width = 740, Text = stepPath };
+            Button yesButton = new() { Text = "Tak", Left = 550, Width = 100, Top = 100, DialogResult = DialogResult.Yes };
+            Button noButton = new() { Text = "Nie", Left = 660, Width = 100, Top = 100, DialogResult = DialogResult.No };
 
-                TextBox textBox = new TextBox()
-                {
-                    Left = 20,
-                    Top = 50,
-                    Width = 740,
-                    Text = stepPath
-                };
+            prompt.Controls.Add(label);
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(yesButton);
+            prompt.Controls.Add(noButton);
+            prompt.AcceptButton = yesButton;
+            prompt.CancelButton = noButton;
 
-                Button yesButton = new Button()
-                {
-                    Text = "Tak",
-                    Left = 550,
-                    Width = 100,
-                    Top = 100,
-                    DialogResult = DialogResult.Yes
-                };
-
-                Button noButton = new Button()
-                {
-                    Text = "Nie",
-                    Left = 660,
-                    Width = 100,
-                    Top = 100,
-                    DialogResult = DialogResult.No
-                };
-
-                prompt.Controls.Add(label);
-                prompt.Controls.Add(textBox);
-                prompt.Controls.Add(yesButton);
-                prompt.Controls.Add(noButton);
-                prompt.AcceptButton = yesButton;
-                prompt.CancelButton = noButton;
-
-                if (prompt.ShowDialog() == DialogResult.Yes)
-                {
-                    decision = true;
-                    stepPathEdited = textBox.Text;
-                }
+            if (prompt.ShowDialog() == DialogResult.Yes)
+            {
+                decision = true;
+                stepPathEdited = textBox.Text;
             }
 
             return (decision, stepPathEdited);
@@ -198,82 +137,73 @@ namespace SolidEdgeAdd_In.Utils
         {
             string selected = null;
 
-            using (Form prompt = new Form())
+            using var prompt = new Form
             {
-                prompt.Width = 300;
-                prompt.Height = 200;
-                prompt.FormBorderStyle = FormBorderStyle.FixedDialog;
-                prompt.Text = "Właściwości tabeli listy części.";
-                prompt.StartPosition = FormStartPosition.CenterScreen;
+                Width = 300,
+                Height = 200,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Właściwości tabeli listy części.",
+                StartPosition = FormStartPosition.CenterScreen
+            };
 
-                ListBox listBox = new ListBox()
+            ListBox listBox = new () { Left = 10, Top = 10, Width = 200, Height = 120 };
+
+            foreach (var s in savedSettings)
+            {
+                listBox.Items.Add(s);
+            }
+
+            Button confirmation = new () { Text = "OK", Left = 10, Width = 80, Top = 135, DialogResult = DialogResult.OK };
+
+            prompt.Controls.Add(listBox);
+            prompt.Controls.Add(confirmation);
+            prompt.AcceptButton = confirmation;
+
+            if (prompt.ShowDialog() == DialogResult.OK)
+            {
+                if (listBox.SelectedItem != null)
                 {
-                    Left = 10,
-                    Top = 10,
-                    Width = 200,
-                    Height = 120
-                };
-
-                foreach (var s in savedSettings)
-                {
-                    listBox.Items.Add(s);
-                }
-
-                Button confirmation = new Button()
-                {
-                    Text = "OK",
-                    Left = 10,
-                    Width = 80,
-                    Top = 135,
-                    DialogResult = DialogResult.OK
-                };
-
-                prompt.Controls.Add(listBox);
-                prompt.Controls.Add(confirmation);
-                prompt.AcceptButton = confirmation;
-
-                if (prompt.ShowDialog() == DialogResult.OK)
-                {
-                    if (listBox.SelectedItem != null)
-                    {
-                        selected = listBox.SelectedItem.ToString();
-                    }
+                    selected = listBox.SelectedItem.ToString();
                 }
             }
 
             return selected;
         }
-        public static string GetPartsListType(SolidEdgeFramework.Application application, SolidEdgeAssembly.AssemblyDocument assembly)
+
+        public static string GetPartsListType(SeApp application, SeAssembly assembly)
         {
-            SolidEdgeFramework.Documents documents = null;
-            SolidEdgeDraft.DraftDocument draft = null;
-            SolidEdgeDraft.Sheet sheet = null;
-            SolidEdgeDraft.DrawingViews drawingViews = null;
-            SolidEdgeDraft.DrawingView drawingView = null;
-            SolidEdgeDraft.ModelLinks modelLinks = null;
-            SolidEdgeDraft.ModelLink modelLink = null;
-            SolidEdgeDraft.PartsLists partsLists = null;
-            SolidEdgeDraft.PartsList partsList = null;
+            SeDocuments documents = null;
+            SeDraft draft = null;
+            SeDraftSheet sheet = null;
+            SeDrawingViews drawingViews = null;
+            SeDrawingView drawingView = null;
+            SeModelLinks modelLinks = null;
+            SeModelLink modelLink = null;
+            SePartsLists partsLists = null;
+            SePartsList partsList = null;
 
             try
             {
                 documents = application.Documents;
-                draft = (SolidEdgeDraft.DraftDocument)documents.Add("SolidEdge.DraftDocument", Missing.Value);
+                draft = (SeDraft)documents.Add("SolidEdge.DraftDocument", Missing.Value);
                 sheet = draft.ActiveSheet;
                 modelLinks = draft.ModelLinks;
                 modelLink = modelLinks.Add(assembly.FullName);
                 drawingViews = sheet.DrawingViews;
+
                 drawingView = drawingViews.AddAssemblyView(
                     modelLink,
-                    SolidEdgeDraft.ViewOrientationConstants.igFrontView,
+                    SeViewOrientation.igFrontView,
                     0.1, 0.2, 0.2,
-                    SolidEdgeDraft.AssemblyDrawingViewTypeConstants.seAssemblyDesignedView);
+                    SeAssemblyDrawingViewType.seAssemblyDesignedView);
+
                 partsLists = draft.PartsLists;
                 partsList = partsLists.AddEx(drawingView, 0, "", 0, 1);
 
                 int numSavedSettings = 0;
-                System.Array listOfSavedSettings = Array.CreateInstance(typeof(object), 0);
+                Array listOfSavedSettings = Array.CreateInstance(typeof(object), 0);
                 partsList.GetListOfSavedSettings(out numSavedSettings, ref listOfSavedSettings);
+
                 var settingsList = new List<string>();
 
                 if (listOfSavedSettings != null)

@@ -1,96 +1,68 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Windows.Forms;
-using Excel = Microsoft.Office.Interop.Excel; 
-
-namespace SolidEdgeAdd_In.Utils
+﻿namespace SolidEdgeAdd_In.Utils
 {
     public class RaportGenerationUtils
     {
-        public static void Dxfs(string location, Excel.Worksheet worksheet, int typeNumber, int nameNumber)
+        public static void DxfsMemory(string location, object[,] data, int typeNumber, int nameNumber, int checkDxfColumn, int rowCount)
         {
-            Excel.Range range = null;
-            Excel.Range rows = null;
-            Excel.Range columns = null;
-            Excel.Range firstRow = null;
-            Excel.Range cells = null;
-            try
+            data[1, checkDxfColumn] = "DXF:";
+
+            string[] allFiles = Directory.GetFiles(location, "*.*", SearchOption.TopDirectoryOnly);
+            var allDxfFiles = allFiles.Where(f => f.EndsWith(".dxf", StringComparison.OrdinalIgnoreCase)).ToList();
+            var allCadFiles = allFiles.Where(f => f.EndsWith(".par", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".psm", StringComparison.OrdinalIgnoreCase)).ToList();
+
+            var dxfFileNames = allDxfFiles.Select(f => new { Path = f, Name = Path.GetFileName(f) }).ToList();
+            var cadFileNames = allCadFiles.Select(f => new { Path = f, Name = Path.GetFileName(f) }).ToList();
+
+            for (int i = 2; i <= rowCount; i++)
             {
-                range = worksheet.UsedRange;
-                rows = worksheet.UsedRange.Rows;
-                columns = worksheet.UsedRange.Columns;
-                firstRow = rows[1];
-                cells = range.Cells;
+                object rawName = data[i, nameNumber];
+                object rawType = data[i, typeNumber];
 
-                int checkDxfColumn = columns.Count + 1;
-                cells[1, checkDxfColumn] = "DXF:";
+                if (rawName == null || rawType == null) continue;
 
-                foreach (Excel.Range row in rows)
+                string name = rawName.ToString().Trim();
+                string type = rawType.ToString().Trim();
+
+                if (type.Equals("Blacha", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (row.Row == firstRow.Row) continue;
+                    bool hasDxf = dxfFileNames.Any(f => f.Name.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0);
 
-                    string name = ExcelWrapper.GetValue(range, row.Row, nameNumber);
-                    if (name == null) continue;
-
-                    string type = ExcelWrapper.GetValue(range, row.Row, typeNumber);
-                    if (type == null) continue;
-
-                    if (type.Equals("Blacha", StringComparison.OrdinalIgnoreCase))
+                    if (hasDxf)
                     {
-                        string[] dxfFiles = Directory.GetFiles(location, $"*{name}*.dxf", SearchOption.TopDirectoryOnly);
+                        
+                        string cadFilePath = allCadFiles.FirstOrDefault(f => Path.GetFileName(f).IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0);
 
-                        if (dxfFiles.Length > 0)
+                        if (!string.IsNullOrEmpty(cadFilePath))
                         {
-                            var cadFiles = Directory.GetFiles(location, $"*{name}*.*", SearchOption.TopDirectoryOnly)
-                                                    .Where(f => f.EndsWith(".par", StringComparison.OrdinalIgnoreCase) ||
-                                                                f.EndsWith(".psm", StringComparison.OrdinalIgnoreCase))
-                                                    .ToArray();
-
-                            if (cadFiles.Length > 0)
+                            string dxfDate;
+                            using (var properties = new PropertyProvider(cadFilePath, true))
                             {
-                                string cadFilePath = cadFiles[0];
-                                string dxfDate = PropertyProvider.GetDxfDate(cadFilePath);
-
-                                if (!string.IsNullOrEmpty(dxfDate))
-                                {
-                                    cells[row.Row, checkDxfColumn].Value = dxfDate;
-                                }
-                                else
-                                {
-                                    cells[row.Row, checkDxfColumn].Value = "Brak właściwości DXF"; 
-                                }
+                                dxfDate = properties.DxfDate;
                             }
-                        }
-                        else
-                        {
-                            cells[row.Row, checkDxfColumn].Value = "Brak DXF"; 
+
+                            if (!string.IsNullOrEmpty(dxfDate)) data[i, checkDxfColumn] = dxfDate;
+                            else data[i, checkDxfColumn] = "Brak właściwości DXF";
                         }
                     }
                     else
                     {
-                        cells[row.Row, checkDxfColumn].Value = "-"; 
+                        data[i, checkDxfColumn] = "Brak DXF";
                     }
                 }
-            }
-            finally
-            {
-                CoreUtils.ReleaseCom(ref cells);
-                CoreUtils.ReleaseCom(ref firstRow);
-                CoreUtils.ReleaseCom(ref columns);
-                CoreUtils.ReleaseCom(ref rows);
-                CoreUtils.ReleaseCom(ref range);
+                else
+                {
+                    data[i, checkDxfColumn] = "-";
+                }
             }
         }
 
-        public static void Shots(Excel.Worksheet worksheet, List<string> shotPaths, bool hasShots, string shotFolder, int typeNumber, int nameNumber, int imageNumber)
+        public static void Shots(ExcelWorksheet worksheet, List<string> shotPaths, bool hasShots, string shotFolder, int typeNumber, int nameNumber, int imageNumber)
         {
-            Excel.Shapes shapes = null;
-            Excel.Range range = null;
-            Excel.Range rows = null;
-            Excel.Range columns = null;
-            Excel.Range firstRow = null;
+            ExcelShapes shapes = null;
+            ExcelRange range = null;
+            ExcelRange rows = null;
+            ExcelRange columns = null;
+            ExcelRange firstRow = null;
             try
             {
                 worksheet.Activate();
@@ -98,68 +70,37 @@ namespace SolidEdgeAdd_In.Utils
                 range = worksheet.UsedRange;
                 rows = worksheet.UsedRange.Rows;
                 columns = worksheet.UsedRange.Columns;
-                firstRow = rows[1];           
+                firstRow = rows[1];
 
                 List<int> numberRowToDelete = new List<int>();
+                int rowCount = rows.Count;
+
+                Dictionary<string, string> shotDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
                 if (!hasShots && shotPaths.Count > 0)
                 {
-                    foreach (Excel.Range row in rows)
-                    {
-                        if (firstRow.Row == row.Row) continue;
-
-                        string name = ExcelWrapper.GetValue(range, row.Row, nameNumber);
-                        if (name == null) continue;
-
-                        dynamic shotCell = row.Cells[1, imageNumber];
-                        shotCell.RowHeight = 120;
-                        shotCell.ColumnWidth = 20;
-
-                        string type = ExcelWrapper.GetValue(range, row.Row, typeNumber);
-                        if (type == null)
-                        {
-                            numberRowToDelete.Add(row.Row);
-                            continue;
-                        }
-
-                        foreach (string shotPath in shotPaths)
-                        {
-                            string jpgName = Path.GetFileNameWithoutExtension(shotPath);
-                            if (string.Equals(name, jpgName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                var picture = shapes.AddPicture(shotPath,
-                                                            Microsoft.Office.Core.MsoTriState.msoFalse,
-                                                            Microsoft.Office.Core.MsoTriState.msoCTrue,
-                                                            (float)shotCell.Left,
-                                                            (float)shotCell.Top,
-                                                            (float)shotCell.Width,
-                                                            (float)shotCell.Height);
-
-                                picture.Placement = Excel.XlPlacement.xlMoveAndSize;
-                                picture.Select();
-                                worksheet.Application.CommandBars.ExecuteMso("PicturePlaceInCell");
-
-                                CoreUtils.ReleaseCom(ref picture);
-                                break;
-                            }
-                        }
-                    }
+                    foreach (string sp in shotPaths)
+                        shotDict[Path.GetFileNameWithoutExtension(sp)] = sp;
+                }
+                else if (hasShots && shotPaths.Count == 0)
+                {
+                    string[] folderShots = Directory.GetFiles(shotFolder, "*.jpg", SearchOption.TopDirectoryOnly);
+                    foreach (string sp in folderShots)
+                        shotDict[Path.GetFileNameWithoutExtension(sp)] = sp;
                 }
 
-                if (hasShots && shotPaths.Count == 0)
+                for (int i = 1; i <= rowCount; i++)
                 {
-                    List<string> shotPathsFromFolder = Directory.GetFiles(shotFolder, "*.jpg", SearchOption.TopDirectoryOnly).ToList();
-                    if (shotPathsFromFolder.Count == 0) return;
-
-                    foreach (Excel.Range row in rows)
+                    ExcelRange row = null;
+                    try
                     {
+                        row = (ExcelRange)rows[i];
                         if (firstRow.Row == row.Row) continue;
 
                         string name = ExcelWrapper.GetValue(range, row.Row, nameNumber);
                         if (name == null) continue;
 
                         dynamic shotCell = row.Cells[1, imageNumber];
-
                         shotCell.RowHeight = 120;
                         shotCell.ColumnWidth = 20;
 
@@ -170,35 +111,41 @@ namespace SolidEdgeAdd_In.Utils
                             continue;
                         }
 
-                        foreach (string shotPath in shotPathsFromFolder)
+                        if (shotDict.TryGetValue(name, out string matchedShotPath))
                         {
-                            string shotName = Path.GetFileNameWithoutExtension(shotPath);
-                            if (string.Equals(name, shotName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                var picture = shapes.AddPicture(shotPath,
-                                                            Microsoft.Office.Core.MsoTriState.msoFalse,
-                                                            Microsoft.Office.Core.MsoTriState.msoCTrue,
-                                                            (float)shotCell.Left,
-                                                            (float)shotCell.Top,
-                                                            (float)shotCell.Width,
-                                                            (float)shotCell.Height);
+                            var picture = shapes.AddPicture(matchedShotPath,
+                                                        MsoTriState.msoFalse,
+                                                        MsoTriState.msoCTrue,
+                                                        (float)shotCell.Left,
+                                                        (float)shotCell.Top,
+                                                        (float)shotCell.Width,
+                                                        (float)shotCell.Height);
 
-                                picture.Placement = Excel.XlPlacement.xlMoveAndSize;
-                                picture.Select();
-                                worksheet.Application.CommandBars.ExecuteMso("PicturePlaceInCell");
-
-                                CoreUtils.ReleaseCom(ref picture);
-                                break;
-                            }
-                        }                     
+                            picture.Placement = ExcelXlPlacement.xlMoveAndSize;
+                            picture.Select();
+                            worksheet.Application.CommandBars.ExecuteMso("PicturePlaceInCell");
+                            CoreUtils.ReleaseCom(ref picture);
+                        }
+                    }
+                    finally
+                    {
+                        CoreUtils.ReleaseCom(ref row);
                     }
                 }
 
                 var sortedIndices = numberRowToDelete.OrderByDescending(i => i).ToList();
                 foreach (int rowIndex in sortedIndices)
                 {
-                    Microsoft.Office.Interop.Excel.Range row = rows[rowIndex];
-                    row.Delete(Excel.XlDeleteShiftDirection.xlShiftUp);
+                    ExcelRange row = null;
+                    try
+                    {
+                        row = (ExcelRange)rows[rowIndex];
+                        row.Delete(ExcelXlDeleteShiftDirection.xlShiftUp);
+                    }
+                    finally
+                    {
+                        CoreUtils.ReleaseCom(ref row);
+                    }
                 }
             }
             finally
@@ -211,21 +158,10 @@ namespace SolidEdgeAdd_In.Utils
             }
         }
 
-        public static string GetDxfPath
-           (string folder, string filePath, Dictionary<string, int> dict)
-        {
-            string baseName = Path.GetFileNameWithoutExtension(filePath);
-            string dxfFileName =
-            $"{PropertyProvider.GetThickness(filePath)}mm_{CoreUtils.GetCount(dict, filePath)}szt_{PropertyProvider.GetMaterial(filePath)}_{baseName}.dxf";
-            string dxfFilePath = Path.Combine(folder, dxfFileName);
-            return dxfFilePath;
-        }
-
-        public static string GetShotPath
-            (string path, SolidEdgeFramework.Window window)
+        public static string GetShotPath(string path, SeWindow window)
         {
             string shotPath = path + ".jpg";
-            SolidEdgeFramework.View view = null;
+            SeView view = null;
             try
             {
                 view = window.View;
@@ -235,7 +171,7 @@ namespace SolidEdgeAdd_In.Utils
                     Width: window.UsableWidth,
                     Height: window.UsableHeight,
                     AltViewStyle: null, Resolution: 1, ColorDepth: 24,
-                    ImageQuality: SolidEdgeFramework.SeImageQualityType.seImageQualityHigh,
+                    ImageQuality: SeImageQualityType.seImageQualityHigh,
                     Invert: false);
                 return shotPath;
             }

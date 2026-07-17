@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SolidEdgeAdd_In.Ribbons
 {
@@ -8,7 +5,7 @@ namespace SolidEdgeAdd_In.Ribbons
     {
         private Guid _environmentCategory;
 
-        private List<RibbonTab> _tabs = new List<RibbonTab>();
+        private readonly List<RibbonTab> _tabs = new List<RibbonTab>();
 
         public SolidEdgeFramework.Application Application { get; set; } 
 
@@ -54,7 +51,7 @@ namespace SolidEdgeAdd_In.Ribbons
     {
         public event RibbonControlClickEventHandler Click;
 
-        private int _commandId;
+        private readonly int _commandId;
         private string _label;
         private string _screenTip;
         private string _superTip;
@@ -86,8 +83,8 @@ namespace SolidEdgeAdd_In.Ribbons
 
     public class RibbonGroup
     {
-        private string _name;
-        private List<RibbonControl> _controls = new List<RibbonControl>();
+        private readonly string _name;
+        private readonly List<RibbonControl> _controls = new();
 
         internal RibbonGroup(string name)
         {
@@ -105,8 +102,8 @@ namespace SolidEdgeAdd_In.Ribbons
 
     public class RibbonTab
     {
-        private string _name;
-        private List<RibbonGroup> _groups = new List<RibbonGroup>();
+        private readonly string _name;
+        private readonly List<RibbonGroup> _groups = new();
 
         internal RibbonTab(string name)
         {

@@ -1,38 +1,37 @@
-using SolidEdgeAdd_In.Utils; 
-using System;
-using System.Collections.Generic;
-using System.IO; 
-using System.Reflection;
-using System.Windows.Forms;
-using Excel = Microsoft.Office.Interop.Excel; 
+using SolidEdgeAdd_In.Utils;
 
-namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
+namespace SolidEdgeAdd_In.Helpers
 {
     public class ExportPartsListHelper
     {
-        public static int GetMultiplier(SolidEdgeAssembly.AssemblyDocument assembly)
+        public static (bool isConfirmed, int multiplier) GetMultiplier(SeAssembly assembly)
         {
-            SolidEdgeFramework.SolidEdgeDocument document = (SolidEdgeFramework.SolidEdgeDocument)assembly;
-            int count = PropertyProvider.GetCount(document);
-            if (count == 0) PropertyProvider.SetCount(document, count = DialogService.GetMultiplier());
-            return count;
+            SeDocument document = (SeDocument)assembly;
+            using var properties = new PropertyProvider(document);
+
+            int count = properties.Count;
+            if (count == 0)
+            {
+                return DialogService.GetMultiplier();
+            }
+            return (true, count);
         }
 
-        public static void CopyPartsList(SolidEdgeAssembly.AssemblyDocument assembly)
+        public static void CopyPartsList(SeAssembly assembly)
         {
-            SolidEdgeFramework.Documents documents = null;
-            SolidEdgeDraft.DraftDocument draft = null;
-            SolidEdgeDraft.Sheet sheet = null;
-            SolidEdgeDraft.ModelLinks modelLinks = null;
-            SolidEdgeDraft.ModelLink modelLink = null;
-            SolidEdgeDraft.DrawingViews drawingViews = null;
-            SolidEdgeDraft.DrawingView drawingView = null;
-            SolidEdgeDraft.PartsLists partsLists = null;
-            SolidEdgeDraft.PartsList partsList = null;
+            SeDocuments documents = null;
+            SeDraft draft = null;
+            SeDraftSheet sheet = null;
+            SeModelLinks modelLinks = null;
+            SeModelLink modelLink = null;
+            SeDrawingViews drawingViews = null;
+            SeDrawingView drawingView = null;
+            SePartsLists partsLists = null;
+            SePartsList partsList = null;
             try
             {
                 documents = assembly.Application.Documents;
-                draft = (SolidEdgeDraft.DraftDocument)documents.Add("SolidEdge.DraftDocument", Missing.Value);
+                draft = (SeDraft)documents.Add("SolidEdge.DraftDocument", Missing.Value);
                 sheet = draft.ActiveSheet;
                 modelLinks = draft.ModelLinks;
                 modelLink = modelLinks.Add(assembly.FullName);
@@ -40,8 +39,8 @@ namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
 
                 drawingView = drawingViews.AddAssemblyView(
                         modelLink,
-                        SolidEdgeDraft.ViewOrientationConstants.igFrontView, 0.1, 0.2, 0.2,
-                        SolidEdgeDraft.AssemblyDrawingViewTypeConstants.seAssemblyDesignedView);
+                        SeViewOrientation.igFrontView, 0.1, 0.2, 0.2,
+                        SeAssemblyDrawingViewType.seAssemblyDesignedView);
 
                 partsLists = draft.PartsLists;
                 partsList = partsLists.AddEx(drawingView, 0, DialogService.GetPartsListType(assembly.Application, assembly), 0, 1);
@@ -68,19 +67,19 @@ namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
             return !DialogService.IsShotsNeeded();
         }
 
-        public static List<string> GetShots(SolidEdgeAssembly.AssemblyDocument assembly, bool hasShots)
+        public static List<string> GetShots(SeAssembly assembly, bool hasShots)
         {
             var shots = new List<string>();
             if (hasShots) return shots;
 
-            var occurrences = new Dictionary<string, int>();
-            AssemblyTreeWalker.AllOccurrences(assembly.Occurrences, occurrences);
+            Dictionary<string, int> occurrences = new (StringComparer.OrdinalIgnoreCase);
+            AssemblyTreeWalker.OccurrencesForExportPartsList(assembly.Occurrences, occurrences);
 
-            SolidEdgeFramework.SolidEdgeDocument document = null;
-            SolidEdgeAssembly.AssemblyDocument subAssembly = null;
-            SolidEdgePart.PartDocument part = null;
-            SolidEdgePart.SheetMetalDocument sheetMetal = null;
-            SolidEdgeFramework.Window window = null;
+            SeDocument document = null;
+            SeAssembly subAssembly = null;
+            SePart part = null;
+            SeSheetMetal sheetMetal = null;
+            SeWindow window = null;
 
             var shotPaths = new List<string>();
             string shotsLocation = Path.Combine(Path.GetDirectoryName(assembly.FullName), "Miniatury");
@@ -93,29 +92,29 @@ namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
                     string fileName = Path.GetFileNameWithoutExtension(occurrence.Key);
 
                     document = CoreUtils.GetOpenDocument(assembly.Application, occurrence.Key);
-                    window = assembly.Application.ActiveWindow as SolidEdgeFramework.Window;
+                    window = assembly.Application.ActiveWindow as SeWindow;
 
-                    if (document is SolidEdgePart.PartDocument pDoc)
+                    if (document is SePart pDoc)
                     {
-                        part = (SolidEdgePart.PartDocument)pDoc;
+                        part = pDoc;
                         CoreUtils.ManageCoordinateSystemsInPart(part, false);
                         var shotPath = RaportGenerationUtils.GetShotPath(Path.Combine(shotsLocation, fileName), window);
                         shotPaths.Add(shotPath);
                         CoreUtils.ManageCoordinateSystemsInPart(part, true);
                         continue;
                     }
-                    else if (document is SolidEdgeAssembly.AssemblyDocument aDoc)
+                    else if (document is SeAssembly aDoc)
                     {
-                        subAssembly = (SolidEdgeAssembly.AssemblyDocument)aDoc;
+                        subAssembly = aDoc;
                         CoreUtils.ManageCoordinateSystemsInAssembly(subAssembly, false);
                         var shotPath = RaportGenerationUtils.GetShotPath(Path.Combine(shotsLocation, fileName), window);
                         shotPaths.Add(shotPath);
                         CoreUtils.ManageCoordinateSystemsInAssembly(subAssembly, true);
                         continue;
                     }
-                    else if (document is SolidEdgePart.SheetMetalDocument smDoc)
+                    else if (document is SeSheetMetal smDoc)
                     {
-                        sheetMetal = (SolidEdgePart.SheetMetalDocument)smDoc;
+                        sheetMetal = smDoc;
                         CoreUtils.ManageCoordinateSystemsInSheetMetal(sheetMetal, false);
                         var shotPath = RaportGenerationUtils.GetShotPath(Path.Combine(shotsLocation, fileName), window);
                         shotPaths.Add(shotPath);
@@ -137,25 +136,30 @@ namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
             return shotPaths;
         }
 
-        public static void ExcelObjects(out Excel.Application excelApp, out Excel.Workbooks workbooks, out Excel.Workbook workbook, out Excel.Sheets sheets, out Excel.Worksheet worksheet)
+        public static void ExcelObjects(out ExcelApp excelApp, out ExcelWorkbooks workbooks, out ExcelWorkbook workbook, out ExcelSheets sheets, out ExcelWorksheet worksheet)
         {
-            excelApp = new Excel.Application { Visible = false };
-
-            excelApp.DisplayAlerts = false;
-            excelApp.AskToUpdateLinks = false;
+            excelApp = new ExcelApp
+            {
+                Visible = false,
+                DisplayAlerts = false,
+                AskToUpdateLinks = false,
+                ScreenUpdating = false,
+                Calculation = Microsoft.Office.Interop.Excel.XlCalculation.xlCalculationManual,
+                EnableEvents = false
+            };
 
             workbooks = excelApp.Workbooks;
             workbook = workbooks.Add();
 
-            sheets = workbook.Sheets; 
+            sheets = workbook.Sheets;
             worksheet = sheets[1];
 
             worksheet.Paste();
         }
 
-        public static void EditWorksheet(SolidEdgeAssembly.AssemblyDocument assembly, List<string> shots, bool hasShots, Excel.Workbook workbook, Excel.Worksheet worksheet, int multiplier)
+        public static void EditWorksheet(SeAssembly assembly, List<string> shots, bool hasShots, ExcelWorkbook workbook, ExcelWorksheet worksheet, int multiplier)
         {
-            int typeNumber = ExcelWrapper.GetColumnNumber(worksheet.UsedRange,"Typ");
+            int typeNumber = ExcelWrapper.GetColumnNumber(worksheet.UsedRange, "Typ");
             int nameNumber = ExcelWrapper.GetColumnNumber(worksheet.UsedRange, "Numer czêœci");
             int imageNumber = ExcelWrapper.GetColumnNumber(worksheet.UsedRange, "Miniatura");
             int countNumber = ExcelWrapper.GetColumnNumber(worksheet.UsedRange, "Iloœæ");
@@ -166,11 +170,34 @@ namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
                 return;
             }
 
+            ExcelRange usedRange = null;
+            ExcelRange expandedRange = null;
+
+            try
+            {
+                usedRange = worksheet.UsedRange;
+                int rowCount = usedRange.Rows.Count;
+                int colCount = usedRange.Columns.Count;
+                int dxfColNumber = colCount + 1;
+
+                expandedRange = worksheet.Range[worksheet.Cells[1, 1], worksheet.Cells[rowCount, dxfColNumber]];
+
+                object[,] data = (object[,])expandedRange.Value2;
+
+                ExcelWrapper.TypeMemory(data, typeNumber, rowCount);
+                ExcelWrapper.CountMemory(data, multiplier, countNumber, rowCount);
+                RaportGenerationUtils.DxfsMemory(Path.GetDirectoryName(assembly.FullName), data, typeNumber, nameNumber, dxfColNumber, rowCount);
+
+                expandedRange.Value2 = data;
+            }
+            finally
+            {
+                CoreUtils.ReleaseCom(ref expandedRange);
+                CoreUtils.ReleaseCom(ref usedRange);
+            }
+
             ExcelWrapper.Styles(workbook);
-            ExcelWrapper.Type(worksheet, typeNumber);
             ExcelWrapper.Colors(worksheet, typeNumber);
-            ExcelWrapper.Count(worksheet, multiplier, countNumber);
-            RaportGenerationUtils.Dxfs(Path.GetDirectoryName(assembly.FullName), worksheet, typeNumber, nameNumber);
             ExcelWrapper.Edit(worksheet);
 
             string shotDir = Path.Combine(Path.GetDirectoryName(assembly.FullName), "Miniatury");
@@ -178,7 +205,7 @@ namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
             RaportGenerationUtils.Shots(worksheet, shots, hasShots, shotDir, typeNumber, nameNumber, imageNumber);
         }
 
-        public static void Export(SolidEdgeAssembly.AssemblyDocument assembly, Excel.Application excelApp, Excel.Workbooks workbooks, Excel.Workbook workbook, Excel.Worksheet worksheet)
+        public static void Export(SeAssembly assembly, ExcelApp excelApp, ExcelWorkbooks workbooks, ExcelWorkbook workbook, ExcelWorksheet worksheet)
         {
             string partsListPath = Path.Combine(Path.GetDirectoryName(assembly.FullName),
             Path.GetFileNameWithoutExtension(assembly.FullName) + "_PartsList.xlsx");
@@ -190,7 +217,8 @@ namespace SolidEdgeAdd_In.Helpers.AssemblyEnviroment
 
             workbook?.SaveAs(partsListPath);
         }
-        public static void Release(ref Excel.Application excelApp, ref Excel.Workbooks workbooks, ref Excel.Workbook workbook, ref Excel.Sheets sheets, ref Excel.Worksheet worksheet)
+
+        public static void Release(ref ExcelApp excelApp, ref ExcelWorkbooks workbooks, ref ExcelWorkbook workbook, ref ExcelSheets sheets, ref ExcelWorksheet worksheet)
         {
             if (excelApp != null)
             {

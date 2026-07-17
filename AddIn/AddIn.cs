@@ -1,9 +1,4 @@
-﻿using SolidEdgeAdd_In.Ribbons; // for using Ribbons
-using System;                          
-using System.Reflection;               
-using System.Runtime.InteropServices;
-using Microsoft.Win32;
-using SolidEdgeFramework;
+﻿using SolidEdgeAdd_In.Ribbons;
 
 namespace SolidEdgeAdd_In
 {
@@ -17,16 +12,14 @@ namespace SolidEdgeAdd_In
 
     // Define a COM-visible class with a GUID and ProgID for Solid Edge to identify this add-in
     [Guid("384E5BCF-DD43-49AC-BF01-F99CC009B35F"), ProgId("SolidEdgeAdd-In.Addin"), ComVisible(true)]
-    public class AddIn : SolidEdgeFramework.ISolidEdgeAddIn
+    public class AddIn : SeISolidEdgeAddIn
     {
-        
-        public SolidEdgeFramework.AddIn m_addin; // Reference to the AddIn object     
-        public SolidEdgeFramework.Application m_application; // Reference to the Application object
+        public SeAddIn m_addin; // Reference to the AddIn object     
+        public SeApp m_application; // Reference to the Application object
 
         private RibbonController m_Controller; // Controller managing all ribbons for different environments
 
-
-        public SolidEdgeFramework.Application Application => m_application; // Allow other classes to access the Application (read-only property)
+        public SeApp Application => m_application; // Allow other classes to access the Application (read-only property)
 
         #region ISolidEdgeAddIn Members   
 
@@ -37,17 +30,17 @@ namespace SolidEdgeAdd_In
         3. Set the GUI version property of the Solid Edge Add-in object. 
         */
 
-        public void OnConnection(object Application, SeConnectMode ConnectMode, SolidEdgeFramework.AddIn AddInInstance)
-        {            
+        public void OnConnection(object Application, SeConnectMode ConnectMode, SeAddIn AddInInstance)
+        {
             // Store the COM references for later use
             m_addin = AddInInstance;
-            m_application = (SolidEdgeFramework.Application)Application;
+            m_application = (SeApp)Application;
 
             // Initialize ribbon controller to manage environment-specific ribbons
             m_Controller = new RibbonController(new SolidEdgeAddInWrapper(this));
 
             // Set Addin's GUI Version 
-            AddInInstance.GuiVersion = 1;                      
+            AddInInstance.GuiVersion = 1;
         }
 
         /*
@@ -61,55 +54,29 @@ namespace SolidEdgeAdd_In
         {
             Guid environmentCategory = new Guid(EnvCatID); // Convert string category ID to Guid to identify environment
 
-            Guid CATID_SE_Draft = new Guid("{08244193-B78D-11D2-9216-00C04F79BE98}"); // Draft environment GUID
+            Guid CATID_SE_Draft = new("{08244193-B78D-11D2-9216-00C04F79BE98}"); // Draft environment GUID
 
-            Guid CATID_SE_Part = new Guid("{26618396-09D6-11d1-BA07-080036230602}"); // Part environment GUID
-            Guid CATID_SE_SyncPart = new Guid("{D9B0BB85-3A6C-4086-A0BB-88A1AAD57A58}"); // Sync Part enviroment GUID
+            Guid CATID_SE_Part = new("{26618396-09D6-11d1-BA07-080036230602}"); // Part environment GUID
+            Guid CATID_SE_SyncPart = new("{D9B0BB85-3A6C-4086-A0BB-88A1AAD57A58}"); // Sync Part enviroment GUID
 
-            Guid CATID_SE_SM = new Guid("{26618398-09D6-11D1-BA07-080036230602}"); // SheetMetal environment GUID
-            Guid CATID_SE_SyncSM = new Guid("{9CBF2809-FF80-4dbc-98F2-B82DABF3530F}"); // Sync SheetMetal environment GUID
+            Guid CATID_SE_SM = new("{26618398-09D6-11D1-BA07-080036230602}"); // SheetMetal environment GUID
+            Guid CATID_SE_SyncSM = new("{9CBF2809-FF80-4dbc-98F2-B82DABF3530F}"); // Sync SheetMetal environment GUID
 
-            Guid CATID_SE_Assembly = new Guid("{26618395-09D6-11d1-BA07-080036230602}"); // Assembly environment GUID
+            Guid CATID_SE_Assembly = new("{26618395-09D6-11d1-BA07-080036230602}"); // Assembly environment GUID
 
-            // If the environment is Draft, add Draft-specific ribbon
-            if (environmentCategory.Equals(CATID_SE_Draft))
+            Guid[] supportedEnvironments = new Guid[]
             {
-                var ribbon = new DraftRibbon(m_application);
-                m_Controller.Add(ribbon, environmentCategory, bFirstTime);
-            }
+                CATID_SE_Draft,
+                CATID_SE_Part,
+                CATID_SE_SyncPart,
+                CATID_SE_SM,
+                CATID_SE_SyncSM,
+                CATID_SE_Assembly
+            };
 
-            // If the environment is Part, add Part-specific ribbon
-            if (environmentCategory.Equals(CATID_SE_Part))
+            if (Array.Exists(supportedEnvironments, env => env.Equals(environmentCategory)))
             {
-                var ribbon = new PartRibbon(m_application);
-                m_Controller.Add(ribbon, environmentCategory, bFirstTime);
-            }
-
-            // If the environment is Sync Part, add Sync Part-specific ribbon
-            if (environmentCategory.Equals(CATID_SE_SyncPart))
-            {
-                var ribbon = new PartRibbon(m_application);
-                m_Controller.Add(ribbon, environmentCategory, bFirstTime);
-            }
-
-            // If the environment is SheetMetal, add SheetMetal-specific ribbon
-            if (environmentCategory.Equals(CATID_SE_SM))
-            {
-                var ribbon = new SheetMetalRibbon(m_application);
-                m_Controller.Add(ribbon, environmentCategory, bFirstTime);
-            }
-
-            // If the environment is Sync SheetMetal, add Sync SheetMetal-specific ribbon
-            if (environmentCategory.Equals(CATID_SE_SyncSM))
-            {
-                var ribbon = new SheetMetalRibbon(m_application);
-                m_Controller.Add(ribbon, environmentCategory, bFirstTime);
-            }
-
-            // If the environment is Assembly, add Assembly-specific ribbon
-            if (environmentCategory.Equals(CATID_SE_Assembly))
-            {
-                var ribbon = new AssemblyRibbon(m_application);
+                var ribbon = new SolidEdgeRibbon(m_application);
                 m_Controller.Add(ribbon, environmentCategory, bFirstTime);
             }
         }
@@ -124,7 +91,10 @@ namespace SolidEdgeAdd_In
         */
 
         public void OnDisconnection(SeDisconnectMode DisconnectMode)
-        {        
+        {
+            m_Controller?.Dispose();
+            m_Controller = null;
+
             if (m_addin != null)
             {
                 Marshal.ReleaseComObject(m_addin);
@@ -145,75 +115,55 @@ namespace SolidEdgeAdd_In
         [ComRegisterFunction]
         static void RegisterServer(Type t)
         {
-            RegistryKey baseKey = null;
-            RegistryKey summaryKey = null;
-            AssemblyTitleAttribute titleAttribute = null;
-            AssemblyDescriptionAttribute descriptionAttribute = null;
+            // Zastosowanie using var załatwia automatyczne zamykanie klucza po zakończeniu rejestracji
+            using var baseKey = Registry.ClassesRoot.CreateSubKey($@"CLSID\{{{t.GUID}}}");
 
-            try
+            if (baseKey != null)
             {
-                baseKey = Registry.ClassesRoot.CreateSubKey(@"CLSID\{" + t.GUID.ToString() + "}");
+                // Tell Solid Edge to automatically load your addin
+                baseKey.SetValue("AutoConnect", 1);
 
-                if (baseKey != null)
+                // Write title
+                if (t.Assembly.IsDefined(typeof(AssemblyTitleAttribute), true))
                 {
-                    // Tell Solid Edge to automatically load your addin
-                    baseKey.SetValue("AutoConnect", 1); 
-
-                    // Write title
-                    if (t.Assembly.IsDefined(typeof(AssemblyTitleAttribute), true))
-                    {
-                        titleAttribute = (AssemblyTitleAttribute)
-                            AssemblyTitleAttribute.GetCustomAttribute(
-                            t.Assembly, typeof(AssemblyTitleAttribute));
-
-                        baseKey.SetValue("409", titleAttribute.Title);
-                    }
-
-                    // Write description
-                    if (t.Assembly.IsDefined(typeof(AssemblyDescriptionAttribute),true))
-                    {
-                        descriptionAttribute = (AssemblyDescriptionAttribute)
-                            AssemblyDescriptionAttribute.GetCustomAttribute(
-                                t.Assembly, typeof(AssemblyDescriptionAttribute));
-
-                        summaryKey = baseKey.CreateSubKey("Summary");
-                        summaryKey.SetValue("409", descriptionAttribute.Description);
-                    }
-
-                    // Write required registry entries for a Solid Edge Addin                  
-                    baseKey.CreateSubKey(@"Implemented Categories\{26B1D2D1-2B03-11d2-B589-080036E8B802}"); // CATID_SolidEdgeAddIn 
-
-                    // And for enviroments 
-                    baseKey.CreateSubKey(@"Environment Categories\{26618394-09D6-11d1-BA07-080036230602}"); // CATID_SEApplication
-
-                    baseKey.CreateSubKey(@"Environment Categories\{08244193-B78D-11D2-9216-00C04F79BE98}"); // CATID_SE Draft
-
-                    baseKey.CreateSubKey(@"Environment Categories\{26618396-09D6-11d1-BA07-080036230602}"); // CATID_SE Part
-                    baseKey.CreateSubKey(@"Environment Categories\{D9B0BB85-3A6C-4086-A0BB-88A1AAD57A58}"); // CATID_SE Part SYNC
-
-                    baseKey.CreateSubKey(@"Environment Categories\{26618398-09D6-11D1-BA07-080036230602}"); // CATID_SE SM
-                    baseKey.CreateSubKey(@"Environment Categories\{9CBF2809-FF80-4dbc-98F2-B82DABF3530F}"); // CATID_SE SM SYNC
-
-                    baseKey.CreateSubKey(@"Environment Categories\{26618395-09D6-11d1-BA07-080036230602}"); // CATID_SE Assembly
+                    var titleAttribute = (AssemblyTitleAttribute)AssemblyTitleAttribute.GetCustomAttribute(t.Assembly, typeof(AssemblyTitleAttribute));
+                    baseKey.SetValue("409", titleAttribute.Title);
                 }
-            }
 
-            finally
-            {
-                if (baseKey != null)
+                // Write description
+                if (t.Assembly.IsDefined(typeof(AssemblyDescriptionAttribute), true))
                 {
-                    baseKey.Close();
+                    var descriptionAttribute = (AssemblyDescriptionAttribute)AssemblyDescriptionAttribute.GetCustomAttribute(t.Assembly, typeof(AssemblyDescriptionAttribute));
+
+                    // Bezpieczne utworzenie i automatyczne zwolnienie podklucza (załataliśmy ewentualny wyciek pamięci!)
+                    using var summaryKey = baseKey.CreateSubKey("Summary");
+                    summaryKey?.SetValue("409", descriptionAttribute.Description);
                 }
+
+                // Write required registry entries for a Solid Edge Addin                  
+                baseKey.CreateSubKey(@"Implemented Categories\{26B1D2D1-2B03-11d2-B589-080036E8B802}"); // CATID_SolidEdgeAddIn 
+
+                // And for enviroments 
+                baseKey.CreateSubKey(@"Environment Categories\{26618394-09D6-11d1-BA07-080036230602}"); // CATID_SEApplication
+
+                baseKey.CreateSubKey(@"Environment Categories\{08244193-B78D-11D2-9216-00C04F79BE98}"); // CATID_SE Draft
+
+                baseKey.CreateSubKey(@"Environment Categories\{26618396-09D6-11d1-BA07-080036230602}"); // CATID_SE Part
+                baseKey.CreateSubKey(@"Environment Categories\{D9B0BB85-3A6C-4086-A0BB-88A1AAD57A58}"); // CATID_SE Part SYNC
+
+                baseKey.CreateSubKey(@"Environment Categories\{26618398-09D6-11D1-BA07-080036230602}"); // CATID_SE SM
+                baseKey.CreateSubKey(@"Environment Categories\{9CBF2809-FF80-4dbc-98F2-B82DABF3530F}"); // CATID_SE SM SYNC
+
+                baseKey.CreateSubKey(@"Environment Categories\{26618395-09D6-11d1-BA07-080036230602}"); // CATID_SE Assembly
             }
         }
 
         // Here we cleanup any registry values left from Regasm /u.
-        [ComUnregisterFunctionAttribute()]
+        [ComUnregisterFunction]
         static void UnregisterServer(Type t)
         {
-            Registry.ClassesRoot.DeleteSubKeyTree(@"CLSID\{" + t.GUID.ToString() + "}");                    
+            Registry.ClassesRoot.DeleteSubKeyTree($@"CLSID\{{{t.GUID}}}", false);
         }
-   
         #endregion
     }
 }
