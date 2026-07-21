@@ -141,7 +141,7 @@ namespace SolidEdgeAdd_In.Utils
 
         public void UpdateDxfDate()
         {
-            SetProperty("Custom", "DXF", DateTime.Now.ToString("yyyy-MM-dd_HH-mm"));
+            SetProperty("Custom", "DXF", DateTime.Now.ToString("yyyy-MM-dd"));
         }
 
         public void SetSheetMaterial()

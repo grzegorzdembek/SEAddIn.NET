@@ -7,28 +7,25 @@ namespace SolidEdgeAdd_In.Helpers
         public static (bool isConfirmed, int multiplier) GetMultiplier(SeAssembly assembly)
         {
             SeDocument document = (SeDocument)assembly;
+
             using var properties = new PropertyProvider(document);
 
             int count = properties.Count;
             if (count == 0)
             {
                 var result = DialogService.GetMultiplier();
-                if (result.isConfirmed)
-                {
-                    properties.Count = result.multiplier;
-                    return result;
-                }
+                if (result.isConfirmed) { properties.Count = result.multiplier; return result; }
                 return (false, 1);
             }
 
             return (true, count);
         }
 
-        public static Dictionary<string, FileData> GetOccurrences(SeAssembly assembly, DxfExportLogger logger)
+        public static Dictionary<string, FileData> GetData(SeAssembly assembly, DxfExportLogger logger)
         {
-            Dictionary<string, FileData> occurrences = new (StringComparer.OrdinalIgnoreCase);
-            AssemblyTreeWalker.OccurrencesForExportDxfs(assembly.Occurrences, occurrences, logger);
-            return occurrences;
+            Dictionary<string, FileData> data = new(StringComparer.OrdinalIgnoreCase);
+            AssemblyTreeWalker.BuildDataForExportDxfs(assembly.Occurrences, data, logger);
+            return data;
         }
 
         public static string GetSubDirectory(SeAssembly assembly)
@@ -46,24 +43,19 @@ namespace SolidEdgeAdd_In.Helpers
             return subDirectory;
         }
 
-        public static void SaveDxfs(SeAssembly assembly, Dictionary<string, FileData> occurrences, string subDirectory, int multiplier, DxfExportLogger logger)
+        public static void ProcessData(SeAssembly assembly, Dictionary<string, FileData> data, string subDirectory, int multiplier, DxfExportLogger logger)
         {
             SeDocument document = null;
-            SeSheetMetal metalSheet = null;
-            SePart part = null;
-            SeModels models = null;
-            SeFlatPatternModels flatPatterns = null;
-
-            string mainDirectory = Path.GetDirectoryName(assembly.FullName);
+            SeSheetMetal metalSheet = null; SePart part = null;
+            SeModels models = null; SeFlatPatternModels flatPatterns = null;
 
             ExcelApp excelApp = null;
-            ExcelWorkbooks workbooks = null;
-            ExcelWorkbook workbook = null;
-            ExcelSheets xlSheets = null;
-            ExcelWorksheet worksheet = null;
-            ExcelRange headerRange = null;
-            ExcelRange usedRange = null;
+            ExcelWorkbooks workbooks = null; ExcelWorkbook workbook = null;
+            ExcelSheets xlSheets = null; ExcelWorksheet worksheet = null;
+            ExcelRange headerRange = null; ExcelRange usedRange = null;
             ExcelRange columns = null;
+
+            string mainDirectory = Path.GetDirectoryName(assembly.FullName);
 
             try
             {
@@ -71,9 +63,9 @@ namespace SolidEdgeAdd_In.Helpers
                 {
                     Visible = false,
                     DisplayAlerts = false,
-                    ScreenUpdating = false, 
-                    Calculation = Microsoft.Office.Interop.Excel.XlCalculation.xlCalculationManual, 
-                    EnableEvents = false 
+                    ScreenUpdating = false,
+                    Calculation = Microsoft.Office.Interop.Excel.XlCalculation.xlCalculationManual,
+                    EnableEvents = false
                 };
                 workbooks = excelApp.Workbooks;
                 workbook = workbooks.Add();
@@ -92,82 +84,73 @@ namespace SolidEdgeAdd_In.Helpers
                 headerRange.Interior.Color = ColorTranslator.ToOle(Color.LightGray);
                 headerRange.Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
 
-                object[,] excelData = new object[occurrences.Count, 6];
+                object[,] excelData = new object[data.Count, 6];
                 int dataRowIndex = 0;
 
-                foreach (var occurrence in occurrences)
+                foreach (var item in data)
                 {
                     bool isOpen = false;
-                    string name = occurrence.Value.Name;
+                    /* Business Decision For Naming Files:
+                     * w glownym folderze pomijamy ilosc
+                     */
+                    string name = item.Value.Name;
+                    string thickness = item.Value.Thickness;
+                    int count = item.Value.OccurrenceCount * multiplier;
+                    string material = item.Value.Material;
+                    string sizeX = item.Value.SizeX;
+                    string sizeY = item.Value.SizeY;
+                    string dxfDate = item.Value.DxfDate;
+
+                    string mainDxfName = $"{thickness}mm_{material}_{name}.dxf";
+                    string subDxfName = $"{thickness}mm_{count}szt_{material}_{name}.dxf";
+
+                    string mainDxfPath = Path.Combine(mainDirectory, mainDxfName);
+                    string subDxfPath = Path.Combine(subDirectory, subDxfName);
 
                     try
                     {
-                        string thickness = occurrence.Value.Thickness;
-                        int count = occurrence.Value.OccurrenceCount * multiplier;
-                        string material = occurrence.Value.Material;
-                        string sizeX = occurrence.Value.SizeX;
-                        string sizeY = occurrence.Value.SizeY;
-
-                        string mainDxfName = $"{thickness}mm_{material}_{name}.dxf";
-                        string subDxfName = $"{thickness}mm_{count}szt_{material}_{name}.dxf";
-
-                        string mainDxfPath = Path.Combine(mainDirectory, mainDxfName);
-                        string subDxfPath = Path.Combine(subDirectory, subDxfName);
-
-                        document = CoreUtils.GetOpenDocument(assembly.Application, occurrence.Key);
-                        isOpen = true;
-
-                        if (document is SePart pDoc)
+                        /*
+                         * Business Decision For Genereting: 
+                         * zapisz jesli brakuje daty wygenerowania dxf. - OK.
+                         * zawsze przekopiuj plik z glownego folderu do SubDirectory
+                         * 
+                         */
+                        bool isDxfDateEmpty = string.IsNullOrEmpty(dxfDate);
+                        if (isDxfDateEmpty)
                         {
-                            part = pDoc;
-                            models = part.Models;
-                            flatPatterns = part.FlatPatternModels;
-                        }
+                            document = CoreUtils.GetOpenDocument(assembly.Application, item.Key); isOpen = true;
 
-                        else if (document is SeSheetMetal msDoc)
-                        {
-                            metalSheet = msDoc;
-                            models = metalSheet.Models;
-                            flatPatterns = metalSheet.FlatPatternModels;
-                        }
+                            if (document is SePart pDoc) { part = pDoc; models = part.Models; flatPatterns = part.FlatPatternModels; }
+                            else if (document is SeSheetMetal msDoc) { metalSheet = msDoc; models = metalSheet.Models; flatPatterns = metalSheet.FlatPatternModels; }
 
-                        if (flatPatterns == null || models == null || flatPatterns.Count == 0 || models.Count == 0)
-                        {
-                            logger.LogSkip(name, "Brak rozwinięcia");
-                            continue;
+                            if (flatPatterns == null || models == null || flatPatterns.Count == 0 || models.Count == 0) { logger.LogSkip(name, "Brak rozwinięcia"); continue; }
+
+                            if (File.Exists(mainDxfPath)) { try { File.Delete(mainDxfPath); } catch { } }
+
+                            models.SaveAsFlatDXFEx(mainDxfPath, null, null, null, true);
+
+                            using var properties = new PropertyProvider(document); properties.UpdateDxfDate();
+
+                            document.Close(true); isOpen = false;
+
+                            logger.LogSuccess($"{name} (Utworzono nowy plik DXF)");
                         }
+                        else { logger.LogSuccess($"{name} (Pobrano gotowy plik)"); }
 
                         if (File.Exists(mainDxfPath))
                         {
-                            try { File.Delete(mainDxfPath); }
-                            catch { }
+                            File.Copy(mainDxfPath, subDxfPath, true);
+
+                            excelData[dataRowIndex, 0] = name;
+                            excelData[dataRowIndex, 1] = $"{thickness} mm";
+                            excelData[dataRowIndex, 2] = sizeX;
+                            excelData[dataRowIndex, 3] = sizeY;
+                            excelData[dataRowIndex, 4] = material;
+                            excelData[dataRowIndex, 5] = count;
+                            dataRowIndex++;
                         }
-
-                        models.SaveAsFlatDXFEx(mainDxfPath, null, null, null, true);
-
-                        using var properties = new PropertyProvider(document);
-                        properties.UpdateDxfDate();
-                        
-                        document.Close(true);
-                        isOpen = false;
-
-                        File.Copy(mainDxfPath, subDxfPath, true);
-
-                        excelData[dataRowIndex, 0] = name;
-                        excelData[dataRowIndex, 1] = $"{thickness} mm";
-                        excelData[dataRowIndex, 2] = sizeX;
-                        excelData[dataRowIndex, 3] = sizeY;
-                        excelData[dataRowIndex, 4] = material;
-                        excelData[dataRowIndex, 5] = count;
-                        dataRowIndex++;
-
-                        logger.LogSuccess(name);
                     }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(name, $"Błąd eksportu: {ex.Message}");
-                        continue;
-                    }
+                    catch (Exception ex) { logger.LogError(name, $"Błąd procesu: {ex.Message}"); continue; }
                     finally
                     {
                         if (isOpen) document?.Close(true);

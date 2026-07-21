@@ -5,7 +5,7 @@ namespace SolidEdgeAdd_In.Utils
 {
     public class AssemblyTreeWalker
     {
-        public static void OccurrencesForExportDxfs(SeOccurrences assemblyOccurrences, Dictionary<string, FileData> occurrences, DxfExportLogger logger)
+        public static void BuildDataForExportDxfs(SeOccurrences assemblyOccurrences, Dictionary<string, FileData> data, DxfExportLogger logger)
         {
             int count = assemblyOccurrences.Count;
 
@@ -17,85 +17,42 @@ namespace SolidEdgeAdd_In.Utils
                 try
                 {
                     occurrence = (SeOccurrence)assemblyOccurrences.Item(i);
-
-                    if (occurrence.IncludeInBom == false)
-                    {
-                        logger.LogSkip("Nieznany Plik", "Plik wykluczony z zestawienia");
-                        continue;
-                    }
+                    if (occurrence.IncludeInBom == false) { logger.LogSkip("Nieznany Plik", "Plik wykluczony z zestawienia"); continue; }
 
                     doc = (SeDocument)occurrence.OccurrenceDocument;
-
                     string path = null;
-
-                    try
-                    {
-                        path = doc.FullName;
-                    }
-                    catch
-                    {
-                        logger.LogSkip("Nieznany Plik", "Brak dostępu do pliku");
-                        continue;
-                    }
+                    try { path = doc.FullName; }
+                    catch { logger.LogSkip("Nieznany Plik", "Brak dostępu do pliku"); continue; }
 
                     string name = System.IO.Path.GetFileNameWithoutExtension(path);
-
-                    if (string.IsNullOrEmpty(path))
-                    {
-                        logger.LogSkip(name, "Plik nie istnieje");
-                        continue;
-                    }
+                    if (string.IsNullOrEmpty(path)) { logger.LogSkip(name, "Plik nie istnieje"); continue; }
 
                     if (doc is SePart || doc is SeSheetMetal)
                     {            
                         using var properties = new PropertyProvider(doc);
 
-                        if (!properties.IsTypeB)
-                        {
-                            logger.LogSkip(name, "Brak Typu B");
-                            continue;
-                        }
+                        if (!properties.IsTypeB) { logger.LogSkip(name, "Brak Typu B"); continue; }
+                        if (!properties.HasMaterial) { logger.LogSkip(name, "Brak materiału blachy"); continue; }
+                        if (!properties.HasThickness) { logger.LogSkip(name, "Brak grubości blachy"); continue; }
+                        if (!properties.IsStatusAvailable) { logger.LogSkip(name, "Status inny niż dostępny"); continue; }
 
-                        if (!properties.HasMaterial)
-                        {
-                            logger.LogSkip(name, "Brak zapisanego materiału");
-                            continue;
-                        }
+                        string dxfDate = properties.DxfDate;
+                        if (!string.IsNullOrEmpty(dxfDate) && dxfDate.Equals("NO", StringComparison.OrdinalIgnoreCase)) { logger.LogSkip(name, "Zablokowano (Właściwość DXF to 'NO')"); continue; }
 
-                        if (!properties.HasThickness)
+                        if (!data.ContainsKey(path))
                         {
-                            logger.LogSkip(name, "Brak grubości blachy");
-                            continue;
-                        }
-
-                        if (!properties.IsStatusAvailable)
-                        {
-                            logger.LogSkip(name, "Status pliku jest niedostępny");
-                            continue;
-                        }
-
-                        if (properties.HasDxfDate)
-                        {
-                            logger.LogSkip(name, "Plik ma właściwość Dxf");
-                            continue;
-                        }
-
-                        if (!occurrences.ContainsKey(path))
-                        {
-                            occurrences[path] = new FileData
+                            data[path] = new FileData
                             {
                                 OccurrenceCount = 1,
                                 Material = properties.Material,
                                 Thickness = properties.Thickness,
                                 Name = name,
                                 SizeX = properties.SizeX,
-                                SizeY = properties.SizeY
+                                SizeY = properties.SizeY,
+                                DxfDate = dxfDate
                             };
                         }
-                        else
-                        {
-                            occurrences[path].OccurrenceCount++;
-                        }
+                        else { data[path].OccurrenceCount++; }
                     }
                     else if (doc is SeAssembly asmDoc)
                     {
@@ -105,19 +62,11 @@ namespace SolidEdgeAdd_In.Utils
                         using var properties = new PropertyProvider(doc);
                         isTypeA = properties.IsTypeA;
                      
-                        if (!isTypeA)
-                        {
-                            logger.LogSkip(name, "Złożenie pominęto (Nie jest Typem A)");
-                            continue;
-                        }
-                        OccurrencesForExportDxfs(subAssembly.Occurrences, occurrences, logger);
+                        if (!isTypeA) { logger.LogSkip(name, "Złożenie pominęto (Nie jest Typem A)"); continue; }
+                        BuildDataForExportDxfs(subAssembly.Occurrences, data, logger);
                     }
                 }
-                catch (Exception ex)
-                { 
-                    logger.LogError("Nieznany obiekt", $"Błąd podczas skanowania drzewa złożenia: {ex.Message}"); 
-                    continue; 
-                }
+                catch (Exception ex) { logger.LogError("Nieznany obiekt", $"Błąd podczas skanowania drzewa złożenia: {ex.Message}"); continue; }
                 finally
                 {
                     CoreUtils.ReleaseCom(ref subAssembly);

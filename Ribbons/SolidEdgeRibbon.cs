@@ -1,5 +1,6 @@
 using SolidEdgeAdd_In.Main;
 using SolidEdgeAdd_In.Utils;
+using System.Xml.Linq;
 
 namespace SolidEdgeAdd_In.Ribbons
 {
@@ -138,11 +139,18 @@ namespace SolidEdgeAdd_In.Ribbons
             {
                 Label = "Dodaj rysunki",
                 ScreenTip = "Dodaje folder Rysunki ",
-                SuperTip = "Dodane zostaną właściwości (ilości) dla wszystkich wystąpień w otwartym złożeniu"
+                SuperTip = "Dodane zostaną rysunki na podstawie pliku Excel w folderze Paczki."
             };
             Ribbon7.Click += (control) =>
             {
-                MessageBox.Show("Jeszcze nie ma");
+                SeDocument document = null;
+                try
+                {
+                    document = application.ActiveDocument;
+                    ExportDrawingsCommand.Execute(document);
+                }
+                finally { CoreUtils.ReleaseCom(ref document); }
+                
             };
             generalGroup.AddControl(Ribbon7);
         }
