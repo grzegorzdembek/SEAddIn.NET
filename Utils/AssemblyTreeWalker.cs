@@ -50,6 +50,44 @@ namespace SolidEdgeAdd_In.Utils
             }
         }
 
+        public static void BuildDataForExportPartsList(SeOccurrences assemblyOccurrences, Dictionary<string, int> data)
+        {
+            int count = assemblyOccurrences.Count;
+
+            for (int i = 1; i <= count; i++)
+            {
+                SeOccurrence occurrence = null; SeDocument doc = null; SeAssembly subAssembly = null;
+
+                try
+                {
+                    occurrence = (SeOccurrence)assemblyOccurrences.Item(i); doc = (SeDocument)occurrence.OccurrenceDocument;
+
+                    string path = null; try { path = doc.FullName; } catch { continue; }
+
+                    if (string.IsNullOrEmpty(path)) continue;
+
+                    if (doc is SePart || doc is SeSheetMetal)
+                    {
+                        if (!data.ContainsKey(path)) data[path] = 1; else data[path]++;
+                    }
+                    else if (doc is SeAssembly asmDoc)
+                    {
+                        subAssembly = asmDoc; bool isTypeA = false;
+
+                        using (var properties = new PropertyProvider(doc)) { isTypeA = properties.IsTypeA; }
+
+                        if (!data.ContainsKey(path)) data[path] = 1; else data[path]++;
+
+                        if (!isTypeA) continue;
+
+                        SeOccurrences subOccurrences = null; try { subOccurrences = subAssembly.Occurrences; BuildDataForExportPartsList(subOccurrences, data); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
+                    }
+                }
+                catch { continue; }
+                finally { CoreUtils.ReleaseCom(ref subAssembly); CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
+            }
+        }
+
         public static void BuildDataForSetCount(SeOccurrences assemblyOccurrences, Dictionary<string, FileData> data)
         {
             int count = assemblyOccurrences.Count;
@@ -92,9 +130,10 @@ namespace SolidEdgeAdd_In.Utils
             }
         }
 
-        public static void BuildDataForExportPartsList(SeOccurrences assemblyOccurrences, Dictionary<string, int> data)
+
+        public static void ApplyCounts(SeOccurrences occurrences, Dictionary<string, FileData> data, int multiplier, HashSet<string> processed)
         {
-            int count = assemblyOccurrences.Count;
+            int count = occurrences.Count;
 
             for (int i = 1; i <= count; i++)
             {
@@ -102,27 +141,20 @@ namespace SolidEdgeAdd_In.Utils
 
                 try
                 {
-                    occurrence = (SeOccurrence)assemblyOccurrences.Item(i); doc = (SeDocument)occurrence.OccurrenceDocument;
+                    occurrence = (SeOccurrence)occurrences.Item(i); doc = (SeDocument)occurrence.OccurrenceDocument;
 
                     string path = null; try { path = doc.FullName; } catch { continue; }
 
                     if (string.IsNullOrEmpty(path)) continue;
 
-                    if (doc is SePart || doc is SeSheetMetal)
+                    if (data.ContainsKey(path) && !processed.Contains(path))
                     {
-                        if (!data.ContainsKey(path)) data[path] = 1; else data[path]++;
+                        using var properties = new PropertyProvider(doc); properties.Count = data[path].OccurrenceCount * multiplier; processed.Add(path);
                     }
-                    else if (doc is SeAssembly asmDoc)
+
+                    if (doc is SeAssembly asmDoc)
                     {
-                        subAssembly = asmDoc; bool isTypeA = false;
-
-                        using (var properties = new PropertyProvider(doc)) { isTypeA = properties.IsTypeA; }
-
-                        if (!data.ContainsKey(path)) data[path] = 1; else data[path]++;
-
-                        if (!isTypeA) continue;
-
-                        SeOccurrences subOccurrences = null; try { subOccurrences = subAssembly.Occurrences; BuildDataForExportPartsList(subOccurrences, data); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
+                        subAssembly = asmDoc; SeOccurrences subOccurrences = null; try { subOccurrences = subAssembly.Occurrences; ApplyCounts(subOccurrences, data, multiplier, processed); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
                     }
                 }
                 catch { continue; }

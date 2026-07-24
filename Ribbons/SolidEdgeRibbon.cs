@@ -1,5 +1,4 @@
 using SolidEdgeAdd_In.Commands;
-using SolidEdgeAdd_In.Utils;
 
 namespace SolidEdgeAdd_In.Ribbons
 {
@@ -25,7 +24,7 @@ namespace SolidEdgeAdd_In.Ribbons
             {
                 try
                 {
-                    var document = application.ActiveDocument; // FIXED: Do not release ActiveDocument
+                    var document = application.ActiveDocument; 
                     if (document is SeDraft draft) SaveAsDxfAndPdfCommand.Execute(draft);
                     else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
                 }

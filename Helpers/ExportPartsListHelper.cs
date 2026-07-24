@@ -37,7 +37,7 @@ namespace SolidEdgeAdd_In.Helpers
 
         public static List<string> GetShots(SeAssembly assembly, bool hasShots)
         {
-            var shots = new List<string>(); if (hasShots) return shots;
+            List<string> shots = new (); if (hasShots) return shots;
 
             Dictionary<string, int> data = new(StringComparer.OrdinalIgnoreCase); AssemblyTreeWalker.BuildDataForExportPartsList(assembly.Occurrences, data);
 
@@ -64,7 +64,7 @@ namespace SolidEdgeAdd_In.Helpers
 
         public static void ExcelObjects(out ExcelApp excelApp, out ExcelWorkbooks workbooks, out ExcelWorkbook workbook, out ExcelSheets sheets, out ExcelWorksheet worksheet)
         {
-            excelApp = new ExcelApp { Visible = false, DisplayAlerts = false, AskToUpdateLinks = false, ScreenUpdating = false, EnableEvents = false };
+            excelApp = new ExcelApp { Visible = false, DisplayAlerts = false, AskToUpdateLinks = false, EnableEvents = false };
 
             workbooks = excelApp.Workbooks; workbook = workbooks.Add(); excelApp.Calculation = Microsoft.Office.Interop.Excel.XlCalculation.xlCalculationManual; sheets = workbook.Sheets; worksheet = sheets[1];
 

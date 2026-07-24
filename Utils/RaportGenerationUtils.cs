@@ -49,9 +49,9 @@
 
                 rows = range.Rows; columns = range.Columns; firstRow = rows[1];
 
-                List<int> numberRowToDelete = new List<int>(); int rowCount = rows.Count;
+                List<int> numberRowToDelete = new (); int rowCount = rows.Count;
 
-                Dictionary<string, string> shotDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                Dictionary<string, string> shotDict = new (StringComparer.OrdinalIgnoreCase);
 
                 if (!hasShots && shotPaths.Count > 0) { foreach (string sp in shotPaths) shotDict[Path.GetFileNameWithoutExtension(sp)] = sp; }
                 else if (hasShots && shotPaths.Count == 0) { string[] folderShots = Directory.GetFiles(shotFolder, "*.jpg", SearchOption.TopDirectoryOnly); foreach (string sp in folderShots) shotDict[Path.GetFileNameWithoutExtension(sp)] = sp; }
