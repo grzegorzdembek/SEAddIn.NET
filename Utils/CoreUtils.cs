@@ -1,49 +1,29 @@
 namespace SolidEdgeAdd_In.Utils
 {
-    public class DxfExportLogger
+    public class Logger
     {
-        private readonly StringBuilder _logBuilder = new ();
-        private int _successCount = 0;
-        private int _skipCount = 0;
-        private int _errorCount = 0;
+        private readonly StringBuilder _logBuilder = new(); private int _successCount = 0; private int _skipCount = 0; private int _errorCount = 0;
 
-        public void LogSkip(string fileName, string reason)
-        {
-            _logBuilder.AppendLine($"[POMINIĘTO] {fileName} -> {reason}");
-            _skipCount++;
-        }
+        public void LogSkip(string fileName, string reason) { _logBuilder.AppendLine($"[POMINIĘTO] {fileName} -> {reason}"); _skipCount++; }
 
-        public void LogSuccess(string fileName)
-        {
-            _logBuilder.AppendLine($"[SUKCES]    {fileName} -> Wyeksportowano pomyślnie");
-            _successCount++;
-        }
+        public void LogSuccess(string fileName) { _logBuilder.AppendLine($"[SUKCES]    {fileName}"); _successCount++; }
 
-        public void LogError(string fileName, string errorMessage)
-        {
-            _logBuilder.AppendLine($"[BŁĄD]      {fileName} -> {errorMessage}");
-            _errorCount++;
-        }
+        public void LogError(string fileName, string errorMessage) { _logBuilder.AppendLine($"[BŁĄD]      {fileName} -> {errorMessage}"); _errorCount++; }
 
         public void SaveReport(string directoryPath)
         {
             try
             {
-                string reportPath = Path.Combine(directoryPath, "Raport_Eksportu_DXF.txt");
-                var finalReport = new StringBuilder();
+                string reportPath = Path.Combine(directoryPath, "Raport.txt"); var finalReport = new StringBuilder();
 
-                finalReport.AppendLine("==================================================");
-                finalReport.AppendLine("             RAPORT Z EKSPORTU DXF                ");
-                finalReport.AppendLine("==================================================");
-                finalReport.AppendLine($"Data wygenerowania: {DateTime.Now}");
-                finalReport.AppendLine($"Liczba plików wyeksportowanych: {_successCount}");
-                finalReport.AppendLine($"Liczba plików pominiętych:      {_skipCount}");
-                finalReport.AppendLine($"Liczba błędów krytycznych:      {_errorCount}");
+                finalReport.AppendLine("=================================================="); 
+                finalReport.AppendLine("                     RAPORT                       ");
+                finalReport.AppendLine("=================================================="); 
+                finalReport.AppendLine($"Data: {DateTime.Now}"); finalReport.AppendLine($"Liczba plików: {_successCount}"); 
+                finalReport.AppendLine($"Liczba pominiętych:      {_skipCount}"); finalReport.AppendLine($"Liczba błędów:      {_errorCount}"); 
                 finalReport.AppendLine("==================================================\n");
 
-                finalReport.Append(_logBuilder.ToString());
-
-                File.WriteAllText(reportPath, finalReport.ToString());
+                finalReport.Append(_logBuilder.ToString()); File.WriteAllText(reportPath, finalReport.ToString());
             }
             catch { }
         }
@@ -52,57 +32,71 @@ namespace SolidEdgeAdd_In.Utils
 
     public class CoreUtils
     {
-
         public static void ManageCoordinateSystemsInPart(SePart part, bool visible)
         {
-            foreach (SeRefPlane refPlane in part.RefPlanes) { refPlane.Visible = visible; }
-            foreach (SeRefAxis refAxis in part.RefAxes) { refAxis.Visible = visible; }
-            foreach (SeCoordinateSystem cs in part.CoordinateSystems) { cs.Visible = visible; }
+            SolidEdgePart.RefPlanes planes = null; SolidEdgePart.RefAxes axes = null; SolidEdgePart.CoordinateSystems coords = null;
+
+            try
+            {
+                planes = part.RefPlanes;
+                if (planes != null) { for (int i = 1; i <= planes.Count; i++) { SeRefPlane plane = null; try { plane = (SeRefPlane)planes.Item(i); plane.Visible = visible; } finally { ReleaseCom(ref plane); } } }
+
+                axes = part.RefAxes;
+                if (axes != null) { for (int i = 1; i <= axes.Count; i++) { SeRefAxis axis = null; try { axis = (SeRefAxis)axes.Item(i); axis.Visible = visible; } finally { ReleaseCom(ref axis); } } }
+
+                coords = part.CoordinateSystems;
+                if (coords != null) { for (int i = 1; i <= coords.Count; i++) { SeCoordinateSystem cs = null; try { cs = (SeCoordinateSystem)coords.Item(i); cs.Visible = visible; } finally { ReleaseCom(ref cs); } } }
+            }
+            finally { ReleaseCom(ref coords); ReleaseCom(ref axes); ReleaseCom(ref planes); }
         }
 
         public static void ManageCoordinateSystemsInSheetMetal(SeSheetMetal sheetMetal, bool visible)
         {
-            foreach (SeRefPlane refPlane in sheetMetal.RefPlanes) { refPlane.Visible = visible; }
-            foreach (SeRefAxis refAxis in sheetMetal.RefAxes) { refAxis.Visible = visible; }
-            foreach (SeCoordinateSystem cs in sheetMetal.CoordinateSystems) { cs.Visible = visible; }
+            SolidEdgePart.RefPlanes planes = null; SolidEdgePart.RefAxes axes = null; SolidEdgePart.CoordinateSystems coords = null;
+
+            try
+            {
+                planes = sheetMetal.RefPlanes;
+                if (planes != null) { for (int i = 1; i <= planes.Count; i++) { SeRefPlane plane = null; try { plane = (SeRefPlane)planes.Item(i); plane.Visible = visible; } finally { ReleaseCom(ref plane); } } }
+
+                axes = sheetMetal.RefAxes;
+                if (axes != null) { for (int i = 1; i <= axes.Count; i++) { SeRefAxis axis = null; try { axis = (SeRefAxis)axes.Item(i); axis.Visible = visible; } finally { ReleaseCom(ref axis); } } }
+
+                coords = sheetMetal.CoordinateSystems;
+                if (coords != null) { for (int i = 1; i <= coords.Count; i++) { SeCoordinateSystem cs = null; try { cs = (SeCoordinateSystem)coords.Item(i); cs.Visible = visible; } finally { ReleaseCom(ref cs); } } }
+            }
+            finally { ReleaseCom(ref coords); ReleaseCom(ref axes); ReleaseCom(ref planes); }
         }
 
         public static void ManageCoordinateSystemsInAssembly(SeAssembly assembly, bool visible)
         {
-            foreach (SeAsmRefPlane refPlane in assembly.AsmRefPlanes) { refPlane.Visible = visible; }
-        }
+            SolidEdgeAssembly.AsmRefPlanes planes = null;
 
-        public static void ReleaseCom<T>(ref T comObject) where T : class
-        {
-            if (comObject != null)
+            try
             {
-                try { Marshal.ReleaseComObject(comObject); }
-                finally { comObject = null; }
+                planes = assembly.AsmRefPlanes;
+
+                if (planes != null) { for (int i = 1; i <= planes.Count; i++) { SeAsmRefPlane plane = null; try { plane = (SeAsmRefPlane)planes.Item(i); plane.Visible = visible; } finally { ReleaseCom(ref plane); } } }
             }
+            finally { ReleaseCom(ref planes); }
         }
 
-        public static int GetCount(Dictionary<string, int> dict, string path)
-        {
-            return dict[path];
-        }
+        public static void ReleaseCom<T>(ref T comObject) where T : class { if (comObject != null) { try { Marshal.ReleaseComObject(comObject); } finally { comObject = null; } } }
+
+        public static int GetCount(Dictionary<string, int> dict, string path) { return dict[path]; }
 
         public static SeDocument GetOpenDocument(SeApp application, string filePath)
         {
-            SeDocument document = null;
+            SeDocument document = null; SeDocuments documents = null;
+
             try
             {
-                application.DisplayAlerts = false;
+                application.DisplayAlerts = false; int seOpenNoAssemblyContext = 32; int seOpenNoVisible = 128; int openFlags = seOpenNoAssemblyContext | seOpenNoVisible;
 
-                int seOpenNoAssemblyContext = 32;
-                int seOpenNoVisible = 128;
-                int openFlags = seOpenNoAssemblyContext | seOpenNoVisible;
+                documents = application.Documents; document = (SeDocument)documents.Open(filePath, openFlags);
+            }
+            finally { application.DisplayAlerts = true; CoreUtils.ReleaseCom(ref documents); }
 
-                document = (SeDocument)application.Documents.Open(filePath, openFlags);
-            }
-            finally
-            {
-                application.DisplayAlerts = true;
-            }
             return document;
         }
     }

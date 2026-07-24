@@ -1,6 +1,6 @@
 using SolidEdgeAdd_In.Utils;
 
-namespace SolidEdgeAdd_In.Helpers
+namespace SolidEdgeAdd_In.Commands
 {
     public class ExportDxfsHelper
     {
@@ -21,10 +21,19 @@ namespace SolidEdgeAdd_In.Helpers
             return (true, count);
         }
 
-        public static Dictionary<string, FileData> GetData(SeAssembly assembly, DxfExportLogger logger)
+        public static Dictionary<string, FileData> GetData(SeAssembly assembly, Logger logger)
         {
             Dictionary<string, FileData> data = new(StringComparer.OrdinalIgnoreCase);
-            AssemblyTreeWalker.BuildDataForExportDxfs(assembly.Occurrences, data, logger);
+            SeOccurrences occurrences = null;
+            try
+            {
+                occurrences = assembly.Occurrences;
+                AssemblyTreeWalker.BuildDataForExportDxfs(occurrences, data, logger);
+            }
+            finally
+            {
+                CoreUtils.ReleaseCom(ref occurrences);
+            }
             return data;
         }
 
@@ -43,8 +52,9 @@ namespace SolidEdgeAdd_In.Helpers
             return subDirectory;
         }
 
-        public static void ProcessData(SeAssembly assembly, Dictionary<string, FileData> data, string subDirectory, int multiplier, DxfExportLogger logger)
+        public static void ProcessData(SeAssembly assembly, Dictionary<string, FileData> data, string subDirectory, int multiplier, Logger logger)
         {
+            SeApp app = null;
             SeDocument document = null;
             SeSheetMetal metalSheet = null; SePart part = null;
             SeModels models = null; SeFlatPatternModels flatPatterns = null;
@@ -53,72 +63,76 @@ namespace SolidEdgeAdd_In.Helpers
             ExcelWorkbooks workbooks = null; ExcelWorkbook workbook = null;
             ExcelSheets xlSheets = null; ExcelWorksheet worksheet = null;
             ExcelRange headerRange = null; ExcelRange usedRange = null;
-            ExcelRange columns = null;
+            ExcelRange columns = null; ExcelRange cells = null;
+
+            ExcelRange startHeaderCell = null; ExcelRange endHeaderCell = null;
+            dynamic headerFont = null; dynamic headerInterior = null;
+            dynamic headerBorders = null; dynamic usedBorders = null;
 
             string mainDirectory = Path.GetDirectoryName(assembly.FullName);
 
             try
             {
+                app = (SeApp)assembly.Application;
+
                 excelApp = new ExcelApp
                 {
                     Visible = false,
                     DisplayAlerts = false,
                     ScreenUpdating = false,
-                    Calculation = Microsoft.Office.Interop.Excel.XlCalculation.xlCalculationManual,
                     EnableEvents = false
                 };
+
                 workbooks = excelApp.Workbooks;
                 workbook = workbooks.Add();
+                excelApp.Calculation = Microsoft.Office.Interop.Excel.XlCalculation.xlCalculationManual;
                 xlSheets = workbook.Sheets;
                 worksheet = (ExcelWorksheet)xlSheets[1];
+                cells = worksheet.Cells;
 
-                worksheet.Cells[1, 1] = "Nr części";
-                worksheet.Cells[1, 2] = "Grubość";
-                worksheet.Cells[1, 3] = "Szerokość";
-                worksheet.Cells[1, 4] = "Długość";
-                worksheet.Cells[1, 5] = "Gatunek";
-                worksheet.Cells[1, 6] = "Ilość";
+                object[,] headerData = new object[1, 6] { { "Nr części", "Grubość", "Szerokość", "Długość", "Gatunek", "Ilość" } };
+                try
+                {
+                    startHeaderCell = (ExcelRange)cells[1, 1];
+                    endHeaderCell = (ExcelRange)cells[1, 6];
+                    headerRange = worksheet.Range[startHeaderCell, endHeaderCell];
+                    headerRange.Value = headerData;
+                }
+                finally
+                {
+                    CoreUtils.ReleaseCom(ref startHeaderCell);
+                    CoreUtils.ReleaseCom(ref endHeaderCell);
+                }
 
-                headerRange = worksheet.Range[worksheet.Cells[1, 1], worksheet.Cells[1, 6]];
-                headerRange.Font.Bold = true;
-                headerRange.Interior.Color = ColorTranslator.ToOle(Color.LightGray);
-                headerRange.Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                headerFont = headerRange.Font;
+                headerFont.Bold = true;
+                headerInterior = headerRange.Interior;
+                headerInterior.Color = ColorTranslator.ToOle(Color.LightGray);
+                headerBorders = headerRange.Borders;
+                headerBorders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
 
                 object[,] excelData = new object[data.Count, 6];
                 int dataRowIndex = 0;
 
                 foreach (var item in data)
                 {
-                    bool isOpen = false;
-                    /* Business Decision For Naming Files:
-                     * w glownym folderze pomijamy ilosc
-                     */
-                    string name = item.Value.Name;
-                    string thickness = item.Value.Thickness;
-                    int count = item.Value.OccurrenceCount * multiplier;
-                    string material = item.Value.Material;
-                    string sizeX = item.Value.SizeX;
-                    string sizeY = item.Value.SizeY;
-                    string dxfDate = item.Value.DxfDate;
+                    bool isOpen = false; bool needGenerationDxf = false;
+
+                    string name = item.Value.Name; int count = item.Value.OccurrenceCount * multiplier;
+                    string material = item.Value.Material; string thickness = item.Value.Thickness;
+                    string sizeX = item.Value.SizeX; string sizeY = item.Value.SizeY;
+                    string dxfDate = item.Value.DxfDate; if (string.IsNullOrEmpty(dxfDate)) { needGenerationDxf = true; }
 
                     string mainDxfName = $"{thickness}mm_{material}_{name}.dxf";
                     string subDxfName = $"{thickness}mm_{count}szt_{material}_{name}.dxf";
-
                     string mainDxfPath = Path.Combine(mainDirectory, mainDxfName);
                     string subDxfPath = Path.Combine(subDirectory, subDxfName);
 
                     try
                     {
-                        /*
-                         * Business Decision For Genereting: 
-                         * zapisz jesli brakuje daty wygenerowania dxf. - OK.
-                         * zawsze przekopiuj plik z glownego folderu do SubDirectory
-                         * 
-                         */
-                        bool isDxfDateEmpty = string.IsNullOrEmpty(dxfDate);
-                        if (isDxfDateEmpty)
+                        if (needGenerationDxf || !File.Exists(subDxfPath))
                         {
-                            document = CoreUtils.GetOpenDocument(assembly.Application, item.Key); isOpen = true;
+                            document = CoreUtils.GetOpenDocument(app, item.Key); isOpen = true;
 
                             if (document is SePart pDoc) { part = pDoc; models = part.Models; flatPatterns = part.FlatPatternModels; }
                             else if (document is SeSheetMetal msDoc) { metalSheet = msDoc; models = metalSheet.Models; flatPatterns = metalSheet.FlatPatternModels; }
@@ -127,20 +141,19 @@ namespace SolidEdgeAdd_In.Helpers
 
                             if (File.Exists(mainDxfPath)) { try { File.Delete(mainDxfPath); } catch { } }
 
+                            using (var properties = new PropertyProvider(document))
+                            {
+                                properties.UpdateDxfDate();
+                            }
+
                             models.SaveAsFlatDXFEx(mainDxfPath, null, null, null, true);
-
-                            using var properties = new PropertyProvider(document); properties.UpdateDxfDate();
-
-                            document.Close(true); isOpen = false;
-
-                            logger.LogSuccess($"{name} (Utworzono nowy plik DXF)");
+                            logger.LogSuccess($"{name} Utworzono nowy plik DXF");
                         }
-                        else { logger.LogSuccess($"{name} (Pobrano gotowy plik)"); }
+                        else { logger.LogSuccess($"{name} Plik DXF już istnieje"); }
 
                         if (File.Exists(mainDxfPath))
                         {
                             File.Copy(mainDxfPath, subDxfPath, true);
-
                             excelData[dataRowIndex, 0] = name;
                             excelData[dataRowIndex, 1] = $"{thickness} mm";
                             excelData[dataRowIndex, 2] = sizeX;
@@ -153,11 +166,14 @@ namespace SolidEdgeAdd_In.Helpers
                     catch (Exception ex) { logger.LogError(name, $"Błąd procesu: {ex.Message}"); continue; }
                     finally
                     {
-                        if (isOpen) document?.Close(true);
                         CoreUtils.ReleaseCom(ref flatPatterns);
                         CoreUtils.ReleaseCom(ref models);
                         CoreUtils.ReleaseCom(ref metalSheet);
                         CoreUtils.ReleaseCom(ref part);
+                        if (isOpen && document != null)
+                        {
+                            try { document.Close(true); } catch { }
+                        }
                         CoreUtils.ReleaseCom(ref document);
                     }
                 }
@@ -169,8 +185,8 @@ namespace SolidEdgeAdd_In.Helpers
                     ExcelRange writeRange = null;
                     try
                     {
-                        startCell = (ExcelRange)worksheet.Cells[2, 1];
-                        endCell = (ExcelRange)worksheet.Cells[dataRowIndex + 1, 6];
+                        startCell = (ExcelRange)cells[2, 1];
+                        endCell = (ExcelRange)cells[dataRowIndex + 1, 6];
                         writeRange = worksheet.Range[startCell, endCell];
                         writeRange.Value = excelData;
                     }
@@ -186,7 +202,9 @@ namespace SolidEdgeAdd_In.Helpers
                 columns = usedRange.Columns;
                 columns.AutoFit();
                 usedRange.HorizontalAlignment = Microsoft.Office.Interop.Excel.XlHAlign.xlHAlignCenter;
-                usedRange.Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+
+                usedBorders = usedRange.Borders;
+                usedBorders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
 
                 string excelPath = Path.Combine(subDirectory, "Zestawienie_DXF.xlsx");
                 if (File.Exists(excelPath)) File.Delete(excelPath);
@@ -194,20 +212,24 @@ namespace SolidEdgeAdd_In.Helpers
             }
             finally
             {
-                workbook?.Close(false);
-                excelApp?.Quit();
+                CoreUtils.ReleaseCom(ref usedBorders);
+                CoreUtils.ReleaseCom(ref headerBorders);
+                CoreUtils.ReleaseCom(ref headerInterior);
+                CoreUtils.ReleaseCom(ref headerFont);
 
+                CoreUtils.ReleaseCom(ref cells);
                 CoreUtils.ReleaseCom(ref columns);
                 CoreUtils.ReleaseCom(ref usedRange);
                 CoreUtils.ReleaseCom(ref headerRange);
                 CoreUtils.ReleaseCom(ref worksheet);
                 CoreUtils.ReleaseCom(ref xlSheets);
+
+                if (workbook != null) { try { workbook.Close(false); } catch { } }
                 CoreUtils.ReleaseCom(ref workbook);
                 CoreUtils.ReleaseCom(ref workbooks);
-                CoreUtils.ReleaseCom(ref excelApp);
 
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
+                if (excelApp != null) { try { excelApp.Quit(); } catch { } }
+                CoreUtils.ReleaseCom(ref excelApp);
             }
         }
     }

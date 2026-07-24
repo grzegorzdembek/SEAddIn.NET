@@ -9,6 +9,7 @@ global using System.Reflection;
 global using System.Runtime.InteropServices;
 global using Microsoft.Win32;
 global using System.Runtime.InteropServices.ComTypes;
+global using System.Diagnostics;
 
 global using SolidEdgeFramework;
 

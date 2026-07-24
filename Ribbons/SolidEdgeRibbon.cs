@@ -1,6 +1,5 @@
-using SolidEdgeAdd_In.Main;
+using SolidEdgeAdd_In.Commands;
 using SolidEdgeAdd_In.Utils;
-using System.Xml.Linq;
 
 namespace SolidEdgeAdd_In.Ribbons
 {
@@ -12,7 +11,8 @@ namespace SolidEdgeAdd_In.Ribbons
             var tab = AddTab("Dodatki");
             var draftGroup = tab.AddGroup("Rysunek");
             var partGroup = tab.AddGroup("Część");
-            var assemblyGroup = tab.AddGroup("Złożenie");
+            var assemblyGroup1 = tab.AddGroup("Złożenie");
+            var assemblyGroup2 = tab.AddGroup("Złożenie");
             var generalGroup = tab.AddGroup("Ogólne");
 
             var saveDraftButton = new RibbonButton(1)
@@ -23,14 +23,13 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             saveDraftButton.Click += (control) =>
             {
-                SeDocument document = null;
                 try
                 {
-                    document = application.ActiveDocument;
+                    var document = application.ActiveDocument; // FIXED: Do not release ActiveDocument
                     if (document is SeDraft draft) SaveAsDxfAndPdfCommand.Execute(draft);
                     else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
                 }
-                finally { CoreUtils.ReleaseCom(ref document); }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
             };
             draftGroup.AddControl(saveDraftButton);
 
@@ -42,17 +41,16 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             saveFlatPatternButton.Click += (control) =>
             {
-                SeDocument document = null;
                 try
                 {
-                    document = application.ActiveDocument;
+                    var document = application.ActiveDocument;
                     if (document is SePart partDocument || document is SeSheetMetal sheetMetalDocument)
                     {
                         SaveAsDxfCommand.Execute(document);
                     }
                     else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
                 }
-                finally { CoreUtils.ReleaseCom(ref document); }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
             };
             partGroup.AddControl(saveFlatPatternButton);
 
@@ -64,17 +62,16 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             saveStepButton.Click += (control) =>
             {
-                SeDocument document = null;
                 try
                 {
-                    document = application.ActiveDocument;
+                    var document = application.ActiveDocument;
                     if (document is SePart partDocument || document is SeSheetMetal sheetMetalDocument)
                     {
                         SaveAsStepCommand.Execute(document);
                     }
                     else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
                 }
-                finally { CoreUtils.ReleaseCom(ref document); }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
             };
             partGroup.AddControl(saveStepButton);
 
@@ -86,16 +83,15 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             exportDxfsButton.Click += (control) =>
             {
-                SeDocument document = null;
                 try
                 {
-                    document = application.ActiveDocument;
+                    var document = application.ActiveDocument;
                     if (document is SeAssembly assembly) ExportDxfsCommand.Execute(assembly);
                     else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
                 }
-                finally { CoreUtils.ReleaseCom(ref document); }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
             };
-            assemblyGroup.AddControl(exportDxfsButton);
+            assemblyGroup1.AddControl(exportDxfsButton);
 
             var exportPartsListButton = new RibbonButton(5)
             {
@@ -105,16 +101,15 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             exportPartsListButton.Click += (control) =>
             {
-                SeDocument document = null;
                 try
                 {
-                    document = application.ActiveDocument;
+                    var document = application.ActiveDocument;
                     if (document is SeAssembly assembly) ExportPartsListCommand.Execute(assembly);
                     else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
                 }
-                finally { CoreUtils.ReleaseCom(ref document); }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
             };
-            assemblyGroup.AddControl(exportPartsListButton);
+            assemblyGroup1.AddControl(exportPartsListButton);
 
             var setCountPropertyButton = new RibbonButton(6)
             {
@@ -124,35 +119,50 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             setCountPropertyButton.Click += (control) =>
             {
-                SeDocument document = null;
                 try
                 {
-                    document = application.ActiveDocument;
+                    var document = application.ActiveDocument;
                     if (document is SeAssembly assembly) SetCountPropertyCommand.Execute(assembly);
                     else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
                 }
-                finally { CoreUtils.ReleaseCom(ref document); }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
             };
-            assemblyGroup.AddControl(setCountPropertyButton);
+            assemblyGroup2.AddControl(setCountPropertyButton);
 
-            var Ribbon7 = new RibbonButton(7)
+            var copyDrawingsButton = new RibbonButton(7)
             {
                 Label = "Dodaj rysunki",
                 ScreenTip = "Dodaje folder Rysunki ",
                 SuperTip = "Dodane zostaną rysunki na podstawie pliku Excel w folderze Paczki."
             };
-            Ribbon7.Click += (control) =>
+            copyDrawingsButton.Click += (control) =>
             {
-                SeDocument document = null;
                 try
                 {
-                    document = application.ActiveDocument;
-                    ExportDrawingsCommand.Execute(document);
+                    var document = application.ActiveDocument;
+                    CopyDrawingsCommand.Execute(document);
                 }
-                finally { CoreUtils.ReleaseCom(ref document); }
-                
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
             };
-            generalGroup.AddControl(Ribbon7);
+            generalGroup.AddControl(copyDrawingsButton);
+
+            var clearDxfDateButton = new RibbonButton(8)
+            {
+                Label = "Usuń właściwość DxfDate.",
+                ScreenTip = "Usuwa właściwość dla plików w tym złożeniu",
+                SuperTip = ""
+            };
+            clearDxfDateButton.Click += (control) =>
+            {
+                try
+                {
+                    var document = application.ActiveDocument;
+                    if (document is SeAssembly assembly) ClearDxfDateCommand.Execute(assembly);
+                    else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
+                }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
+            };
+            assemblyGroup2.AddControl(clearDxfDateButton);
         }
     }
 }
