@@ -8,7 +8,7 @@ namespace SolidEdgeAdd_In.Utils
 
             for (int i = 1; i <= count; i++)
             {
-                SeOccurrences subOccurrences = null; SeOccurrence occurrence = null; SeDocument doc = null; SeAssembly subAssembly = null;
+                SeOccurrences subOccurrences = null; SeOccurrence occurrence = null; SeDocument doc = null;
 
                 try
                 {
@@ -16,17 +16,19 @@ namespace SolidEdgeAdd_In.Utils
 
                     doc = (SeDocument)occurrence.OccurrenceDocument;
 
-                    string path = null; try { path = doc.FullName; } catch { logger.LogSkip("Nieznany Plik", "Brak dostępu do pliku (Błąd COM)"); continue; }
+                    string path = null; try { path = doc.FullName; } catch { logger.LogSkip("Nieznany Plik", "Brak dostępu do pliku"); continue; }
 
-                    if (string.IsNullOrEmpty(path)) { logger.LogSkip("Niezapisany Plik", "Plik nie istnieje na dysku (brak ścieżki)"); continue; }
+                    if (string.IsNullOrEmpty(path)) { logger.LogSkip("Niezapisany Plik", "Plik nie istnieje na dysku"); continue; }
 
                     string name = System.IO.Path.GetFileNameWithoutExtension(path);
 
+                    using var properties = new PropertyProvider(doc);
+
                     if (doc is SePart || doc is SeSheetMetal)
                     {
-                        using var properties = new PropertyProvider(doc);
+                       
 
-                        if (!properties.IsTypeB) { logger.LogSkip(name, "Brak Typu B"); continue; }
+                        if (!properties.IsTypeB) { logger.LogSkip(name, "Brak Typu"); continue; }
                         if (!properties.HasMaterial) { logger.LogSkip(name, "Brak materiału blachy"); continue; }
                         if (!properties.HasThickness) { logger.LogSkip(name, "Brak grubości blachy"); continue; }
                         if (!properties.IsStatusAvailable) { logger.LogSkip(name, "Status inny niż dostępny"); continue; }
@@ -36,17 +38,15 @@ namespace SolidEdgeAdd_In.Utils
                     }
                     else if (doc is SeAssembly asmDoc)
                     {
-                        subAssembly = asmDoc; bool isTypeA = false;
+                        bool isTypeA = false; isTypeA = properties.IsTypeA;
 
-                        using var properties = new PropertyProvider(doc); isTypeA = properties.IsTypeA;
+                        if (!isTypeA) { logger.LogSkip(name, "Złożenie pominęto"); continue; }
 
-                        if (!isTypeA) { logger.LogSkip(name, "Złożenie pominęto (Nie jest Typem A)"); continue; }
-
-                        try { subOccurrences = subAssembly.Occurrences; BuildDataForExportDxfs(subOccurrences, data, logger); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
+                        try { subOccurrences = asmDoc.Occurrences; BuildDataForExportDxfs(subOccurrences, data, logger); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
                     }
                 }
                 catch (Exception ex) { logger.LogError("Nieznany obiekt", $"Błąd podczas skanowania drzewa złożenia: {ex.Message}"); continue; }
-                finally { CoreUtils.ReleaseCom(ref subAssembly); CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
+                finally { CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
             }
         }
 
@@ -56,7 +56,7 @@ namespace SolidEdgeAdd_In.Utils
 
             for (int i = 1; i <= count; i++)
             {
-                SeOccurrence occurrence = null; SeDocument doc = null; SeAssembly subAssembly = null;
+                SeOccurrence occurrence = null; SeDocument doc = null;
 
                 try
                 {
@@ -72,7 +72,7 @@ namespace SolidEdgeAdd_In.Utils
                     }
                     else if (doc is SeAssembly asmDoc)
                     {
-                        subAssembly = asmDoc; bool isTypeA = false;
+                        bool isTypeA = false;
 
                         using (var properties = new PropertyProvider(doc)) { isTypeA = properties.IsTypeA; }
 
@@ -80,11 +80,11 @@ namespace SolidEdgeAdd_In.Utils
 
                         if (!isTypeA) continue;
 
-                        SeOccurrences subOccurrences = null; try { subOccurrences = subAssembly.Occurrences; BuildDataForExportPartsList(subOccurrences, data); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
+                        SeOccurrences subOccurrences = null; try { subOccurrences = asmDoc.Occurrences; BuildDataForExportPartsList(subOccurrences, data); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
                     }
                 }
                 catch { continue; }
-                finally { CoreUtils.ReleaseCom(ref subAssembly); CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
+                finally { CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
             }
         }
 
@@ -94,7 +94,7 @@ namespace SolidEdgeAdd_In.Utils
 
             for (int i = 1; i <= count; i++)
             {
-                SeOccurrence occurrence = null; SeDocument doc = null; SeAssembly subAssembly = null;
+                SeOccurrence occurrence = null; SeDocument doc = null;
 
                 try
                 {
@@ -106,30 +106,31 @@ namespace SolidEdgeAdd_In.Utils
 
                     string name = System.IO.Path.GetFileNameWithoutExtension(path);
 
+                    using var properties = new PropertyProvider(doc);
+
                     if (doc is SePart || doc is SeSheetMetal)
                     {
-                        if (!data.ContainsKey(path)) { using var properties = new PropertyProvider(doc); data[path] = new FileData { Name = name, Type = properties.Type, Count = properties.Count, OccurrenceCount = 1 }; }
+                        if (!data.ContainsKey(path)) { data[path] = new FileData { Name = name, Type = properties.Type, Count = properties.Count, OccurrenceCount = 1 }; }
                         else { data[path].OccurrenceCount++; }
                     }
                     else if (doc is SeAssembly asmDoc)
                     {
-                        subAssembly = asmDoc; string subAsmPath = subAssembly.FullName; if (string.IsNullOrEmpty(subAsmPath)) continue;
+                        string subAsmPath = asmDoc.FullName; if (string.IsNullOrEmpty(subAsmPath)) continue;
 
                         bool isTypeA = false;
 
-                        if (!data.ContainsKey(subAsmPath)) { using var properties = new PropertyProvider(doc); data[subAsmPath] = new FileData { Name = name, Type = properties.Type, Count = properties.Count, OccurrenceCount = 1 }; isTypeA = properties.IsTypeA; }
-                        else { data[subAsmPath].OccurrenceCount++; isTypeA = data[subAsmPath].Type == "A"; }
+                        if (!data.ContainsKey(subAsmPath)) { data[subAsmPath] = new FileData { Name = name, Type = properties.Type, Count = properties.Count, OccurrenceCount = 1 }; isTypeA = properties.IsTypeA; }
+                        else { data[subAsmPath].OccurrenceCount++; isTypeA = data[subAsmPath].Type == Constants.PartTypes.Assembly; }
 
                         if (!isTypeA) continue;
 
-                        SeOccurrences subOccurrences = null; try { subOccurrences = subAssembly.Occurrences; BuildDataForSetCount(subOccurrences, data); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
+                        SeOccurrences subOccurrences = null; try { subOccurrences = asmDoc.Occurrences; BuildDataForSetCount(subOccurrences, data); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
                     }
                 }
                 catch { continue; }
-                finally { CoreUtils.ReleaseCom(ref subAssembly); CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
+                finally { CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
             }
         }
-
 
         public static void ApplyCounts(SeOccurrences occurrences, Dictionary<string, FileData> data, int multiplier, HashSet<string> processed)
         {
@@ -137,7 +138,7 @@ namespace SolidEdgeAdd_In.Utils
 
             for (int i = 1; i <= count; i++)
             {
-                SeOccurrence occurrence = null; SeDocument doc = null; SeAssembly subAssembly = null;
+                SeOccurrence occurrence = null; SeDocument doc = null;
 
                 try
                 {
@@ -154,11 +155,11 @@ namespace SolidEdgeAdd_In.Utils
 
                     if (doc is SeAssembly asmDoc)
                     {
-                        subAssembly = asmDoc; SeOccurrences subOccurrences = null; try { subOccurrences = subAssembly.Occurrences; ApplyCounts(subOccurrences, data, multiplier, processed); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
+                        SeOccurrences subOccurrences = null; try { subOccurrences = asmDoc.Occurrences; ApplyCounts(subOccurrences, data, multiplier, processed); } finally { CoreUtils.ReleaseCom(ref subOccurrences); }
                     }
                 }
                 catch { continue; }
-                finally { CoreUtils.ReleaseCom(ref subAssembly); CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
+                finally { CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
             }
         }
     }

@@ -4,11 +4,11 @@ namespace SolidEdgeAdd_In.Utils
     {
         public static int GetColumnNumber(ExcelRange range, string name)
         {
-            ExcelRange firstRow = null;
+            ExcelRange rows = null; ExcelRange firstRow = null;
 
             try
             {
-                firstRow = range.Rows[1]; object[,] rowData = (object[,])firstRow.Value2;
+                rows = range.Rows; firstRow = rows[1]; object[,] rowData = (object[,])firstRow.Value2;
 
                 if (rowData != null)
                 {
@@ -20,7 +20,7 @@ namespace SolidEdgeAdd_In.Utils
                 return 0;
             }
             catch { return 0; }
-            finally { CoreUtils.ReleaseCom(ref firstRow); }
+            finally { CoreUtils.ReleaseCom(ref firstRow); CoreUtils.ReleaseCom(ref rows); }
         }
 
         public static void Styles(ExcelWorkbook workbook)
@@ -31,17 +31,17 @@ namespace SolidEdgeAdd_In.Utils
             {
                 styles = workbook.Styles;
 
-                assemblyStyle = styles.Add("Złożenie"); assemblyStyle.Interior.Color = ColorTranslator.ToOle(Color.Khaki); assemblyStyle.IncludeAlignment = false; assemblyStyle.IncludeBorder = false;
+                assemblyStyle = styles.Add(Constants.Styles.Assembly); assemblyStyle.Interior.Color = ColorTranslator.ToOle(Color.Khaki); assemblyStyle.IncludeAlignment = false; assemblyStyle.IncludeBorder = false;
 
-                partStyle = styles.Add("Część"); partStyle.Interior.Color = ColorTranslator.ToOle(Color.Lavender); partStyle.IncludeAlignment = false; partStyle.IncludeBorder = false;
+                partStyle = styles.Add(Constants.Styles.Part); partStyle.Interior.Color = ColorTranslator.ToOle(Color.Lavender); partStyle.IncludeAlignment = false; partStyle.IncludeBorder = false;
 
-                steelmakingStyle = styles.Add("Hutnicze"); steelmakingStyle.Interior.Color = ColorTranslator.ToOle(Color.SaddleBrown); steelmakingStyle.IncludeAlignment = false; steelmakingStyle.IncludeBorder = false;
+                steelmakingStyle = styles.Add(Constants.Styles.Steelmaking); steelmakingStyle.Interior.Color = ColorTranslator.ToOle(Color.SaddleBrown); steelmakingStyle.IncludeAlignment = false; steelmakingStyle.IncludeBorder = false;
 
-                boughtStyle = styles.Add("Handlowe"); boughtStyle.Interior.Color = ColorTranslator.ToOle(Color.Aquamarine); boughtStyle.IncludeAlignment = false; boughtStyle.IncludeBorder = false;
+                boughtStyle = styles.Add(Constants.Styles.Commercial); boughtStyle.Interior.Color = ColorTranslator.ToOle(Color.Aquamarine); boughtStyle.IncludeAlignment = false; boughtStyle.IncludeBorder = false;
 
-                normalStyle = styles.Add("Normalia"); normalStyle.Interior.Color = ColorTranslator.ToOle(Color.CadetBlue); normalStyle.IncludeAlignment = false; normalStyle.IncludeBorder = false;
+                normalStyle = styles.Add(Constants.Styles.Standard); normalStyle.Interior.Color = ColorTranslator.ToOle(Color.CadetBlue); normalStyle.IncludeAlignment = false; normalStyle.IncludeBorder = false;
 
-                sheetMetalStyle = styles.Add("Blacha"); sheetMetalStyle.Interior.Color = ColorTranslator.ToOle(Color.Azure); sheetMetalStyle.IncludeAlignment = false; sheetMetalStyle.IncludeBorder = false;
+                sheetMetalStyle = styles.Add(Constants.Styles.SheetMetal); sheetMetalStyle.Interior.Color = ColorTranslator.ToOle(Color.Azure); sheetMetalStyle.IncludeAlignment = false; sheetMetalStyle.IncludeBorder = false;
             }
             finally
             {
@@ -57,7 +57,7 @@ namespace SolidEdgeAdd_In.Utils
 
                 string value = rawValue.ToString().Trim();
 
-                if (value == "A") data[i, typeNumber] = "Złożenie"; else if (value == "C") data[i, typeNumber] = "Część"; else if (value == "K") data[i, typeNumber] = "Hutnicze"; else if (value == "H") data[i, typeNumber] = "Handlowe"; else if (value == "N") data[i, typeNumber] = "Normalia"; else if (value == "B") data[i, typeNumber] = "Blacha";
+                if (value == Constants.PartTypes.Assembly) data[i, typeNumber] = Constants.Styles.Assembly; else if (value == Constants.PartTypes.Part) data[i, typeNumber] = Constants.Styles.Part; else if (value == Constants.PartTypes.Steelmaking) data[i, typeNumber] = Constants.Styles.Steelmaking; else if (value == Constants.PartTypes.Commercial) data[i, typeNumber] = Constants.Styles.Commercial; else if (value == Constants.PartTypes.Standard) data[i, typeNumber] = Constants.Styles.Standard; else if (value == Constants.PartTypes.SheetMetal) data[i, typeNumber] = Constants.Styles.SheetMetal;
             }
         }
 
@@ -77,7 +77,7 @@ namespace SolidEdgeAdd_In.Utils
 
                 conditions = dataRange.FormatConditions; conditions.Delete();
 
-                Rule(conditions, address, "Złożenie", Color.Khaki); Rule(conditions, address, "Część", Color.Lavender); Rule(conditions, address, "Hutnicze", Color.SaddleBrown); Rule(conditions, address, "Handlowe", Color.Aquamarine); Rule(conditions, address, "Normalia", Color.CadetBlue); Rule(conditions, address, "Blacha", Color.Azure);
+                Rule(conditions, address, Constants.Styles.Assembly, Color.Khaki); Rule(conditions, address, Constants.Styles.Part, Color.Lavender); Rule(conditions, address, Constants.Styles.Steelmaking, Color.SaddleBrown); Rule(conditions, address, Constants.Styles.Commercial, Color.Aquamarine); Rule(conditions, address, Constants.Styles.Standard, Color.CadetBlue); Rule(conditions, address, Constants.Styles.SheetMetal, Color.Azure);
             }
             finally { CoreUtils.ReleaseCom(ref conditions); CoreUtils.ReleaseCom(ref anchorCell); CoreUtils.ReleaseCom(ref columns); CoreUtils.ReleaseCom(ref dataRange); CoreUtils.ReleaseCom(ref range); }
         }

@@ -14,7 +14,7 @@ namespace SolidEdgeAdd_In.Helpers
 
                 for (int i = 1; i <= count; i++)
                 {
-                    SeOccurrence occurrence = null; SeDocument doc = null; SeAssembly subAssembly = null;
+                    SeOccurrence occurrence = null; SeDocument doc = null; 
 
                     try
                     {
@@ -22,33 +22,27 @@ namespace SolidEdgeAdd_In.Helpers
 
                         doc = (SeDocument)occurrence.OccurrenceDocument;
 
-                        string path = null; try { path = doc.FullName; } catch { continue; }
+                        string path = null; try { path = doc.FullName; } catch { continue; } if (string.IsNullOrEmpty(path)) continue;
 
-                        if (string.IsNullOrEmpty(path)) continue;
-
-                        string name = System.IO.Path.GetFileNameWithoutExtension(path);
+                        using var properties = new PropertyProvider(doc);
 
                         if (doc is SePart || doc is SeSheetMetal)
                         {
-                            using var properties = new PropertyProvider(doc);
-
                             if (!properties.IsTypeB) continue; if (!properties.HasMaterial) continue; if (!properties.HasThickness) continue; if (!properties.IsStatusAvailable) continue;
 
                             if (properties.HasDxfDate) properties.ClearDxfDate();
                         }
                         else if (doc is SeAssembly asmDoc)
                         {
-                            subAssembly = asmDoc; bool isTypeA = false;
-
-                            using (var properties = new PropertyProvider(doc)) { isTypeA = properties.IsTypeA; }
+                            bool isTypeA = false; isTypeA = properties.IsTypeA; 
 
                             if (!isTypeA) continue;
 
-                            ProcessClearing(subAssembly);
+                            ProcessClearing(asmDoc);
                         }
                     }
                     catch { continue; }
-                    finally { CoreUtils.ReleaseCom(ref subAssembly); CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
+                    finally { CoreUtils.ReleaseCom(ref doc); CoreUtils.ReleaseCom(ref occurrence); }
                 }
             }
             finally { CoreUtils.ReleaseCom(ref occurrences); }

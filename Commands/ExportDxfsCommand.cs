@@ -10,11 +10,11 @@ namespace SolidEdgeAdd_In.Commands
 
             try
             {
-                application.DelayCompute = true; application.ScreenUpdating = false;
-
                 var (isConfirmed, multiplier) = ExportDxfsHelper.GetMultiplier(assembly); if (!isConfirmed || multiplier <= 0) return;
 
                 if (isConfirmed || multiplier > 0) MessageBox.Show($"Wybrano mnożnik:{multiplier}", "Informacja", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                application.DelayCompute = true; application.ScreenUpdating = false;
 
                 subDirectory = ExportDxfsHelper.GetSubDirectory(assembly); var occurrences = ExportDxfsHelper.GetData(assembly, logger);
 

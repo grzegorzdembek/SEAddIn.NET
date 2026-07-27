@@ -21,7 +21,7 @@ namespace SolidEdgeAdd_In.Commands
                 stopwatch.Stop(); string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff"); MessageBox.Show($"Czas wykonywania: {elapsedTime}", "Zakończono", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
-            finally { application.Interactive = true; Helper.Release(ref excelApp, ref workbooks, ref workbook, ref sheets, ref worksheet); }
+            finally { application.DelayCompute = false; Helper.Release(ref excelApp, ref workbooks, ref workbook, ref sheets, ref worksheet); }
         }
     }
 }

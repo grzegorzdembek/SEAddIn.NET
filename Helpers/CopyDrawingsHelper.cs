@@ -10,7 +10,7 @@ namespace SolidEdgeAdd_In.Helpers
 
             string path = document.FullName; string projectDirectory = Path.GetDirectoryName(path);
 
-            string packagesDirectory = Path.Combine(projectDirectory, "Paczki"); if (!Directory.Exists(packagesDirectory)) return null;
+            string packagesDirectory = Path.Combine(projectDirectory, Constants.Folders.Packages); if (!Directory.Exists(packagesDirectory)) return null;
 
             return packagesDirectory;
         }
@@ -33,7 +33,7 @@ namespace SolidEdgeAdd_In.Helpers
 
         public static void ProcessCopyingDrawings(string defaultPath, string selectedDir, string excelPath)
         {
-            string drawingsDirectory = Path.Combine(selectedDir, "Rysunki"); if (!Directory.Exists(drawingsDirectory)) Directory.CreateDirectory(drawingsDirectory);
+            string drawingsDirectory = Path.Combine(selectedDir, Constants.Folders.Drawings); if (!Directory.Exists(drawingsDirectory)) Directory.CreateDirectory(drawingsDirectory);
 
             var PdfFiles = Directory.GetFiles(defaultPath, "*.pdf", SearchOption.TopDirectoryOnly); var DxfFiles = Directory.GetFiles(defaultPath, "*.dxf", SearchOption.TopDirectoryOnly);
 
@@ -50,11 +50,11 @@ namespace SolidEdgeAdd_In.Helpers
 
                 usedRange = worksheet.UsedRange; cells = worksheet.Cells; rows = usedRange.Rows; columns = usedRange.Columns;
 
-                int nameColIndex = ExcelWrapper.GetColumnNumber(usedRange, "Nr części"); if (nameColIndex == 0) { MessageBox.Show("Nie znaleziono kolumny 'Nr części' w pliku Excel.", "Błąd"); return; }
+                int nameColIndex = ExcelWrapper.GetColumnNumber(usedRange, Constants.ExcelHeaders.PartNumber); if (nameColIndex == 0) { MessageBox.Show("Nie znaleziono kolumny w pliku Excel.", "Błąd"); return; }
 
                 int rowCount = rows.Count; int colCount = columns.Count;
 
-                int drawingsColIndex = ExcelWrapper.GetColumnNumber(usedRange, "Rysunki");
+                int drawingsColIndex = ExcelWrapper.GetColumnNumber(usedRange, Constants.ExcelHeaders.Drawings);
 
                 bool isNewColumn = false;
 
@@ -63,7 +63,7 @@ namespace SolidEdgeAdd_In.Helpers
                 try { startCell = (ExcelRange)cells[1, 1]; endCell = (ExcelRange)cells[rowCount, drawingsColIndex]; expandedRange = worksheet.Range[startCell, endCell]; }
                 finally { CoreUtils.ReleaseCom(ref startCell); CoreUtils.ReleaseCom(ref endCell); }
 
-                object[,] data = (object[,])expandedRange.Value2; data[1, drawingsColIndex] = "Rysunek";
+                object[,] data = (object[,])expandedRange.Value2; data[1, drawingsColIndex] = Constants.ExcelHeaders.Drawings;
 
                 for (int i = 2; i <= rowCount; i++)
                 {

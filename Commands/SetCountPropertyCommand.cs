@@ -6,10 +6,12 @@ namespace SolidEdgeAdd_In.Commands
     {
         public static void Execute(SeAssembly assembly)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            Stopwatch stopwatch = Stopwatch.StartNew(); SeApp application = assembly.Application;
 
             try
             {
+                application.DelayCompute = true; application.ScreenUpdating = false;
+
                 var (isConfirmed, multiplier) = Helper.GetMultiplier(assembly); if (!isConfirmed) return;
 
                 var occurrences = Helper.GetData(assembly); var feedback = Helper.SetAndGetFeedback(assembly, occurrences, multiplier);
@@ -19,6 +21,7 @@ namespace SolidEdgeAdd_In.Commands
                 stopwatch.Stop(); string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff"); MessageBox.Show($"Czas wykonywania: {elapsedTime}", "Zakończono", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
+            finally { application.DelayCompute = false; application.ScreenUpdating = true; }
         }
     }
 }

@@ -13,6 +13,9 @@ namespace SolidEdgeAdd_In.Helpers
             return (true, dxfPath, pdfPath);
         }
 
-        public static void Save(SeDraft draft, string dxfPath, string pdfPath) { draft.SaveAs(dxfPath, 14); draft.SaveAs(pdfPath, 5); }
+        public static void Save(SeDraft draft, string dxfPath, string pdfPath) 
+        { 
+            draft.SaveAs(dxfPath, 14); draft.SaveAs(pdfPath, 5); 
+        }
     }
 }

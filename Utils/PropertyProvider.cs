@@ -26,15 +26,15 @@ namespace SolidEdgeAdd_In.Utils
 
         public PropertyProvider(SeDocument document) { _isFileMode = false; _docPropertySets = (SePropertySets)document.Properties; }
 
-        public string Type { get => GetPropertyString("Custom", "Typ"); set => SetProperty("Custom", "Typ", value); }
+        public string Type { get => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.Type); set => SetProperty(Constants.Properties.CustomSet, Constants.Properties.Type, value); }
 
-        public int Status { get { object val = _isFileMode ? GetCustomFileProperty("ExtendedSummaryInformation", "Status") : GetCustomDocProperty("ExtendedSummaryInformation", "Status"); return val != null ? (int)val : -1; } }
+        public int Status { get { object val = _isFileMode ? GetCustomFileProperty(Constants.Properties.SummarySet, Constants.Properties.Status) : GetCustomDocProperty(Constants.Properties.SummarySet, Constants.Properties.Status); return val != null ? (int)val : -1; } }
 
         public string Thickness
         {
             get
             {
-                object rawValue = _isFileMode ? GetCustomFileProperty("Custom", "Grubość materiału") : GetCustomDocProperty("Custom", "Grubość materiału");
+                object rawValue = _isFileMode ? GetCustomFileProperty(Constants.Properties.CustomSet, Constants.Properties.Thickness) : GetCustomDocProperty(Constants.Properties.CustomSet, Constants.Properties.Thickness);
 
                 if (rawValue != null)
                 {
@@ -53,7 +53,7 @@ namespace SolidEdgeAdd_In.Utils
         {
             get
             {
-                object rawValue = _isFileMode ? GetCustomFileProperty("MechanicalModeling", "Material") : GetCustomDocProperty("MechanicalModeling", "Material");
+                object rawValue = _isFileMode ? GetCustomFileProperty(Constants.Properties.MechanicalModeling, Constants.Properties.Material) : GetCustomDocProperty(Constants.Properties.MechanicalModeling, Constants.Properties.Material);
 
                 if (rawValue != null)
                 {
@@ -66,24 +66,24 @@ namespace SolidEdgeAdd_In.Utils
             }
         }
 
-        public string MaterialName => GetPropertyString("Custom", "material_nazwa");
+        public string MaterialName => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.MaterialName);
 
-        public int Count { get { object rawValue = _isFileMode ? GetCustomFileProperty("Custom", "Ilość") : GetCustomDocProperty("Custom", "Ilość"); return (rawValue != null && int.TryParse(rawValue.ToString(), out int count)) ? count : 0; } set => SetProperty("Custom", "Ilość", value); }
+        public int Count { get { object rawValue = _isFileMode ? GetCustomFileProperty(Constants.Properties.CustomSet, Constants.Properties.Quantity) : GetCustomDocProperty(Constants.Properties.CustomSet, Constants.Properties.Quantity); return (rawValue != null && int.TryParse(rawValue.ToString(), out int count)) ? count : 0; } set => SetProperty(Constants.Properties.CustomSet, Constants.Properties.Quantity, value); }
 
-        public string DxfDate => GetPropertyString("Custom", "DXF");
-        public string SizeX => GetPropertyString("Custom", "Model_Rozwinięcia_RozmiarArkuszaX");
-        public string SizeY => GetPropertyString("Custom", "Model_Rozwinięcia_RozmiarArkuszaY");
+        public string DxfDate => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.DxfDate);
+        public string SizeX => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.SizeX);
+        public string SizeY => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.SizeY);
 
         public bool HasType => !string.IsNullOrEmpty(Type); public bool HasStatus => Status >= 0; public bool HasThickness => !string.IsNullOrEmpty(Thickness);
         public bool HasMaterial => !string.IsNullOrEmpty(Material); public bool HasCount => Count > 0; public bool HasDxfDate => !string.IsNullOrEmpty(DxfDate);
         public bool IsStatusAvailable => Status == 0;
 
-        public bool IsTypeA => Type == "A"; public bool IsTypeB => Type == "B"; public bool IsTypeC => Type == "C";
-        public bool IsTypeK => Type == "K"; public bool IsTypeH => Type == "H"; public bool IsTypeN => Type == "N";
+        public bool IsTypeA => Type == Constants.PartTypes.Assembly; public bool IsTypeB => Type == Constants.PartTypes.SheetMetal; public bool IsTypeC => Type == Constants.PartTypes.Part;
+        public bool IsTypeK => Type == Constants.PartTypes.Steelmaking; public bool IsTypeH => Type == Constants.PartTypes.Commercial; public bool IsTypeN => Type == Constants.PartTypes.Standard;
 
-        public void UpdateDxfDate() { SetProperty("Custom", "DXF", DateTime.Now.ToString("yyyy-MM-dd")); }
-        public void ClearDxfDate() { SetProperty("Custom", "DXF", String.Empty); }
-        public void SetSheetMaterial() { SetProperty("Custom", "material_nazwa", "Blachy"); }
+        public void UpdateDxfDate() { SetProperty(Constants.Properties.CustomSet, Constants.Properties.DxfDate, DateTime.Now.ToString("yyyy-MM-dd")); }
+        public void ClearDxfDate() { SetProperty(Constants.Properties.CustomSet, Constants.Properties.DxfDate, String.Empty); }
+        public void SetSheetMaterial() { SetProperty(Constants.Properties.CustomSet, Constants.Properties.MaterialName, "Blachy"); }
 
         private string GetPropertyString(string setName, string propName) { object rawValue = _isFileMode ? GetCustomFileProperty(setName, propName) : GetCustomDocProperty(setName, propName); return rawValue?.ToString(); }
 
@@ -92,7 +92,6 @@ namespace SolidEdgeAdd_In.Utils
         private object GetCustomFileProperty(string setName, string propName)
         {
             SeFileProperties properties = null; SeFileProperty property = null;
-
             try { properties = (SeFileProperties)_filePropertySets[setName]; property = (SeFileProperty)properties[propName]; return property.Value; }
             catch { return null; }
             finally { CoreUtils.ReleaseCom(ref property); CoreUtils.ReleaseCom(ref properties); }
@@ -101,13 +100,10 @@ namespace SolidEdgeAdd_In.Utils
         private void SetCustomFileProperty(string setName, string propName, object value)
         {
             SeFileProperties properties = null; SeFileProperty property = null;
-
             try
             {
                 properties = (SeFileProperties)_filePropertySets[setName];
-
                 try { property = (SeFileProperty)properties[propName]; property.Value = value; } catch { property = (SeFileProperty)properties.Add(propName, value); }
-
                 _filePropertySets.Save();
             }
             catch { }
@@ -117,7 +113,6 @@ namespace SolidEdgeAdd_In.Utils
         private object GetCustomDocProperty(string setName, string propName)
         {
             SeProperties properties = null; SeProperty property = null;
-
             try { properties = (SeProperties)_docPropertySets.Item(setName); property = (SeProperty)properties.Item(propName); dynamic dynProperty = property; return dynProperty.Value; }
             catch { return null; }
             finally { CoreUtils.ReleaseCom(ref property); CoreUtils.ReleaseCom(ref properties); }
@@ -126,19 +121,15 @@ namespace SolidEdgeAdd_In.Utils
         private void SetCustomDocProperty(string setName, string propName, object value)
         {
             SeProperties properties = null; SeProperty property = null;
-
             try
             {
                 properties = (SeProperties)_docPropertySets.Item(setName);
-
                 for (int i = 1; i <= properties.Count; i++)
                 {
                     SeProperty tempProp = null;
-
                     try { tempProp = (SeProperty)properties.Item(i); dynamic dynProp = tempProp; if (dynProp.Name == propName) { tempProp.Delete(); break; } }
                     finally { CoreUtils.ReleaseCom(ref tempProp); }
                 }
-
                 property = (SeProperty)properties.Add(propName, value);
             }
             catch { }
@@ -148,17 +139,13 @@ namespace SolidEdgeAdd_In.Utils
         private static void EnsureMaterialsLoaded()
         {
             if (_materialTranslations != null) return;
-
             lock (_cacheLock)
             {
                 if (_materialTranslations != null) return;
-
                 _materialTranslations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
                 try
                 {
                     string dllPath = Assembly.GetExecutingAssembly().Location; string basePath = Path.GetDirectoryName(dllPath); string materialsFile = Path.Combine(basePath, "materialy.txt");
-
                     if (File.Exists(materialsFile))
                     {
                         foreach (var line in File.ReadLines(materialsFile))
@@ -174,13 +161,11 @@ namespace SolidEdgeAdd_In.Utils
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
-
             if (disposing)
             {
                 if (_isFileMode && _filePropertySets != null) { try { _filePropertySets.Close(); } catch { } CoreUtils.ReleaseCom(ref _filePropertySets); }
                 else if (!_isFileMode && _docPropertySets != null) { CoreUtils.ReleaseCom(ref _docPropertySets); }
             }
-
             _filePropertySets = null; _docPropertySets = null; _disposed = true;
         }
 

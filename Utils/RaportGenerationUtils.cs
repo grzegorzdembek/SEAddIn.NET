@@ -4,7 +4,7 @@
     {
         public static void DxfsMemory(string location, object[,] data, int typeNumber, int nameNumber, int checkDxfColumn, int rowCount)
         {
-            data[1, checkDxfColumn] = "DXF:";
+            data[1, checkDxfColumn] = Constants.Properties.DxfDate;
 
             string[] allFiles = Directory.GetFiles(location, "*.*", SearchOption.TopDirectoryOnly); var allDxfFiles = allFiles.Where(f => f.EndsWith(".dxf", StringComparison.OrdinalIgnoreCase)).ToList(); var allCadFiles = allFiles.Where(f => f.EndsWith(".par", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".psm", StringComparison.OrdinalIgnoreCase)).ToList();
 
@@ -18,7 +18,7 @@
 
                 string name = rawName.ToString().Trim(); string type = rawType.ToString().Trim();
 
-                if (type.Equals("Blacha", StringComparison.OrdinalIgnoreCase))
+                if (type.Equals(Constants.Styles.SheetMetal, StringComparison.OrdinalIgnoreCase))
                 {
                     bool hasDxf = dxfFileNames.Any(f => f.Name.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0);
 
@@ -49,9 +49,9 @@
 
                 rows = range.Rows; columns = range.Columns; firstRow = rows[1];
 
-                List<int> numberRowToDelete = new (); int rowCount = rows.Count;
+                List<int> numberRowToDelete = new(); int rowCount = rows.Count;
 
-                Dictionary<string, string> shotDict = new (StringComparer.OrdinalIgnoreCase);
+                Dictionary<string, string> shotDict = new(StringComparer.OrdinalIgnoreCase);
 
                 if (!hasShots && shotPaths.Count > 0) { foreach (string sp in shotPaths) shotDict[Path.GetFileNameWithoutExtension(sp)] = sp; }
                 else if (hasShots && shotPaths.Count == 0) { string[] folderShots = Directory.GetFiles(shotFolder, "*.jpg", SearchOption.TopDirectoryOnly); foreach (string sp in folderShots) shotDict[Path.GetFileNameWithoutExtension(sp)] = sp; }

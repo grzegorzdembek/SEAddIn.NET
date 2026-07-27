@@ -27,34 +27,44 @@ namespace SolidEdgeAdd_In.Utils
             return (isConfirmed, multiplier);
         }
 
-        public static (bool decision, string dxfPath) GetDecisionAndEditedDxfPath(string dxfPath)
+        public static (bool isConfirmed, string dxfPath) GetDecisionAndEditedDxfPath(string dxfPath)
         {
-            bool decision = false; string dxfPathEdited = dxfPath;
+            bool isConfirmed = false; string dxfPathEdited = dxfPath;
 
             using var prompt = new Form { Width = 800, Height = 200, FormBorderStyle = FormBorderStyle.FixedDialog, Text = "Czy wykonać zapis Dxf?", StartPosition = FormStartPosition.CenterScreen };
 
-            Label label = new() { Left = 20, Top = 20, Width = 740, Text = "Wygenerowana ścieżka (do edycji):" }; TextBox textBox = new() { Left = 20, Top = 50, Width = 740, Text = dxfPath }; Button yesButton = new() { Text = "Tak", Left = 550, Width = 100, Top = 100, DialogResult = DialogResult.Yes }; Button noButton = new() { Text = "Nie", Left = 660, Width = 100, Top = 100, DialogResult = DialogResult.No };
+            Label label = new() { Left = 20, Top = 20, Width = 740, Text = "Wygenerowana ścieżka (do edycji):" }; 
+            TextBox textBox = new() { Left = 20, Top = 50, Width = 740, Text = dxfPath }; 
+            Button yesButton = new() { Text = "Tak", Left = 550, Width = 100, Top = 100, DialogResult = DialogResult.Yes };
+            Button noButton = new() { Text = "Nie", Left = 660, Width = 100, Top = 100, DialogResult = DialogResult.No };
 
-            prompt.Controls.Add(label); prompt.Controls.Add(textBox); prompt.Controls.Add(yesButton); prompt.Controls.Add(noButton); prompt.AcceptButton = yesButton; prompt.CancelButton = noButton;
+            prompt.Controls.Add(label); prompt.Controls.Add(textBox);
+            prompt.Controls.Add(yesButton); prompt.Controls.Add(noButton);
+            prompt.AcceptButton = yesButton; prompt.CancelButton = noButton;
 
-            if (prompt.ShowDialog() == DialogResult.Yes) { decision = true; dxfPathEdited = textBox.Text; }
+            if (prompt.ShowDialog() == DialogResult.Yes) { isConfirmed = true; dxfPathEdited = textBox.Text; }
 
-            return (decision, dxfPathEdited);
+            return (isConfirmed, dxfPathEdited);
         }
 
-        public static (bool decision, string stepPath) GetDecisionAndEditedStepPath(string stepPath)
+        public static (bool isConfirmed, string stepPath) GetDecisionAndEditedStepPath(string stepPath)
         {
-            bool decision = false; string stepPathEdited = stepPath;
+            bool isConfirmed = false; string stepPathEdited = stepPath;
 
             using var prompt = new Form { Width = 800, Height = 200, FormBorderStyle = FormBorderStyle.FixedDialog, Text = "Czy wykonać zapis pliku STEP?", StartPosition = FormStartPosition.CenterScreen };
 
-            Label label = new() { Left = 20, Top = 20, Width = 740, Text = "Wygenerowana ścieżka (do edycji):" }; TextBox textBox = new() { Left = 20, Top = 50, Width = 740, Text = stepPath }; Button yesButton = new() { Text = "Tak", Left = 550, Width = 100, Top = 100, DialogResult = DialogResult.Yes }; Button noButton = new() { Text = "Nie", Left = 660, Width = 100, Top = 100, DialogResult = DialogResult.No };
+            Label label = new() { Left = 20, Top = 20, Width = 740, Text = "Wygenerowana ścieżka (do edycji):" }; 
+            TextBox textBox = new() { Left = 20, Top = 50, Width = 740, Text = stepPath }; 
+            Button yesButton = new() { Text = "Tak", Left = 550, Width = 100, Top = 100, DialogResult = DialogResult.Yes }; 
+            Button noButton = new() { Text = "Nie", Left = 660, Width = 100, Top = 100, DialogResult = DialogResult.No };
 
-            prompt.Controls.Add(label); prompt.Controls.Add(textBox); prompt.Controls.Add(yesButton); prompt.Controls.Add(noButton); prompt.AcceptButton = yesButton; prompt.CancelButton = noButton;
+            prompt.Controls.Add(label); prompt.Controls.Add(textBox); 
+            prompt.Controls.Add(yesButton); prompt.Controls.Add(noButton); 
+            prompt.AcceptButton = yesButton; prompt.CancelButton = noButton;
 
-            if (prompt.ShowDialog() == DialogResult.Yes) { decision = true; stepPathEdited = textBox.Text; }
+            if (prompt.ShowDialog() == DialogResult.Yes) { isConfirmed = true; stepPathEdited = textBox.Text; }
 
-            return (decision, stepPathEdited);
+            return (isConfirmed, stepPathEdited);
         }
 
         private static string PartsListHelper(List<string> savedSettings)

@@ -38,7 +38,7 @@ namespace SolidEdgeAdd_In.Helpers
                 {
                     string type = item.Value.Type; if (type == null) { missTypes++; continue; }
 
-                    if (type == "A" || type == "B" || type == "C" || type == "K")
+                    if (type == Constants.PartTypes.Assembly || type == Constants.PartTypes.SheetMetal || type == Constants.PartTypes.Part || type == Constants.PartTypes.Steelmaking)
                     {
                         string name = item.Value.Name; int count = item.Value.OccurrenceCount; int oldCount = item.Value.Count; int targetCount = multiplier * count;
 
@@ -54,7 +54,7 @@ namespace SolidEdgeAdd_In.Helpers
 
             feedback.AppendLine($"Liczba plików bez właściwości Typ: {missTypes}");
 
-            if (missFiles == 0) feedback.AppendLine($"Pomyślnie dodano właściwość - Ilość dla wszystkich plików z typem - A,B,C,K."); else feedback.AppendLine($"Pominięto {missFiles} plików.");
+            if (missFiles == 0) feedback.AppendLine($"Pomyślnie dodano właściwość - Ilość dla wszystkich plików."); else feedback.AppendLine($"Pominięto {missFiles} plików.");
 
             return feedback;
         }

@@ -132,7 +132,7 @@ namespace SolidEdgeAdd_In.Ribbons
             {
                 Label = "Dodaj rysunki",
                 ScreenTip = "Dodaje folder Rysunki ",
-                SuperTip = "Dodane zostaną rysunki na podstawie pliku Excel w folderze Paczki."
+                SuperTip = "Dodane zostaną rysunki na podstawie pliku Excel w folderze Paczki"
             };
             copyDrawingsButton.Click += (control) =>
             {
@@ -147,9 +147,9 @@ namespace SolidEdgeAdd_In.Ribbons
 
             var clearDxfDateButton = new RibbonButton(8)
             {
-                Label = "Usuń właściwość DxfDate.",
-                ScreenTip = "Usuwa właściwość dla plików w tym złożeniu",
-                SuperTip = ""
+                Label = "Usuń właściwość DxfDate",
+                ScreenTip = "Usuwa właściwość DxfDate dla plików w tym złożeniu",
+                SuperTip = "Można użyć tego przed eksportem DXF"
             };
             clearDxfDateButton.Click += (control) =>
             {

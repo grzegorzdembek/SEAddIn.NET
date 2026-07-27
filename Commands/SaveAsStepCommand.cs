@@ -9,7 +9,9 @@ namespace SolidEdgeAdd_In.Commands
             Stopwatch stopwatch = Stopwatch.StartNew();
             try
             {
-                string path = Helper.GetPath(document); (bool isConfirmed, string editedPath) = Helper.GetDecisionAndEditedPath(path);
+                string path = Helper.GetPath(document); 
+                
+                (bool isConfirmed, string editedPath) = Helper.GetEditedPath(path);
 
                 Helper.Save(document, isConfirmed, editedPath);
 
