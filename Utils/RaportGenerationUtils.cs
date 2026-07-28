@@ -72,7 +72,7 @@
 
                         if (shotDict.TryGetValue(name, out string matchedShotPath))
                         {
-                            var picture = shapes.AddPicture(matchedShotPath, MsoTriState.msoFalse, MsoTriState.msoCTrue, (float)shotCell.Left, (float)shotCell.Top, (float)shotCell.Width, (float)shotCell.Height);
+                            var picture = shapes.AddPicture(matchedShotPath, MsoTriState.msoFalse, MsoTriState.msoCTrue, (float)shotCell.Left +1f, (float)shotCell.Top +1f, (float)shotCell.Width-2f, (float)shotCell.Height-2f);
 
                             picture.Placement = ExcelXlPlacement.xlMoveAndSize; picture.Select();
 

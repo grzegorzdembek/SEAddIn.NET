@@ -33,7 +33,7 @@ namespace SolidEdgeAdd_In.Helpers
                 else if (document is SeSheetMetal sheetMetal) { models = sheetMetal.Models; flatPatterns = sheetMetal.FlatPatternModels; }
 
                 if (flatPatterns == null || models == null || flatPatterns.Count == 0 || models.Count == 0) { MessageBox.Show("Nie można wykonać zapisu DXF - brak rozwinięcia."); }
-                else { using var properties = new PropertyProvider(document); properties.UpdateDxfDate(); models.SaveAsFlatDXFEx(path, null, null, null, true); }
+                else { using var properties = new PropertyProvider(document); properties.UpdateDxfDate(); models.SaveAsFlatDXFEx(path, null, null, null, true); document.Save(); }
             }
             finally { CoreUtils.ReleaseCom(ref flatPatterns); CoreUtils.ReleaseCom(ref models); }
         }

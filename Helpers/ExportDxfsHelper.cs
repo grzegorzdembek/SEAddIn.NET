@@ -110,7 +110,7 @@ namespace SolidEdgeAdd_In.Commands
 
                             if (File.Exists(mainDxfPath)) { try { File.Delete(mainDxfPath); } catch { } }
 
-                            using (var properties = new PropertyProvider(document)) { properties.UpdateDxfDate(); }
+                            using var properties = new PropertyProvider(document); properties.UpdateDxfDate(); 
 
                             models.SaveAsFlatDXFEx(mainDxfPath, null, null, null, true); logger.LogSuccess($"{name} Utworzono nowy plik DXF");
                         }
@@ -128,7 +128,7 @@ namespace SolidEdgeAdd_In.Commands
                     finally
                     {
                         CoreUtils.ReleaseCom(ref flatPatterns); CoreUtils.ReleaseCom(ref models);
-                        if (isOpen && document != null) { try { document.Close(true); } catch { } }
+                        if (isOpen && document != null) { try { document.Save(); document.Close(true); } catch { } }
                         CoreUtils.ReleaseCom(ref document);
                     }
                 }

@@ -31,11 +31,15 @@ namespace SolidEdgeAdd_In.Helpers
             return excelFiles[0];
         }
 
-        public static void ProcessCopyingDrawings(string defaultPath, string selectedDir, string excelPath)
+        public static void ProcessCopyingDrawings(SeDocument document, string selectedDir, string excelPath)
         {
+            if (document == null || string.IsNullOrEmpty(document.FullName)) return ;
+
+            string path = document.FullName; string projectDirectory = Path.GetDirectoryName(path);
+
             string drawingsDirectory = Path.Combine(selectedDir, Constants.Folders.Drawings); if (!Directory.Exists(drawingsDirectory)) Directory.CreateDirectory(drawingsDirectory);
 
-            var PdfFiles = Directory.GetFiles(defaultPath, "*.pdf", SearchOption.TopDirectoryOnly); var DxfFiles = Directory.GetFiles(defaultPath, "*.dxf", SearchOption.TopDirectoryOnly);
+            var PdfFiles = Directory.GetFiles(projectDirectory, "*.pdf", SearchOption.TopDirectoryOnly); var DxfFiles = Directory.GetFiles(projectDirectory, "*.dxf", SearchOption.TopDirectoryOnly);
 
             var pdfNames = PdfFiles.Select(f => new { Path = f, Name = Path.GetFileNameWithoutExtension(f) }).ToList(); var dxfNames = DxfFiles.Select(f => new { Path = f, Name = Path.GetFileNameWithoutExtension(f) }).ToList();
 

@@ -16,7 +16,7 @@ namespace SolidEdgeAdd_In.Commands
 
                 var excelSummary = Helper.GetExcelSummary(selectedDir); if (string.IsNullOrEmpty(excelSummary)) { MessageBox.Show("Brakuje zestawienia blach.", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
 
-                Helper.ProcessCopyingDrawings(defaultDir, selectedDir, excelSummary);
+                Helper.ProcessCopyingDrawings(document, selectedDir, excelSummary);
 
                 stopwatch.Stop(); string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff"); MessageBox.Show($"Czas działania: {elapsedTime}", "Zakończono", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }

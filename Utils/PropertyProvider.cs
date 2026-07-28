@@ -81,7 +81,7 @@ namespace SolidEdgeAdd_In.Utils
         public bool IsTypeA => Type == Constants.PartTypes.Assembly; public bool IsTypeB => Type == Constants.PartTypes.SheetMetal; public bool IsTypeC => Type == Constants.PartTypes.Part;
         public bool IsTypeK => Type == Constants.PartTypes.Steelmaking; public bool IsTypeH => Type == Constants.PartTypes.Commercial; public bool IsTypeN => Type == Constants.PartTypes.Standard;
 
-        public void UpdateDxfDate() { SetProperty(Constants.Properties.CustomSet, Constants.Properties.DxfDate, DateTime.Now.ToString("yyyy-MM-dd")); }
+        public void UpdateDxfDate() { SetProperty(Constants.Properties.CustomSet, Constants.Properties.DxfDate, DateTime.Now.ToString("yyyy-MM-dd-HH-mm")); }
         public void ClearDxfDate() { SetProperty(Constants.Properties.CustomSet, Constants.Properties.DxfDate, String.Empty); }
         public void SetSheetMaterial() { SetProperty(Constants.Properties.CustomSet, Constants.Properties.MaterialName, "Blachy"); }
 
