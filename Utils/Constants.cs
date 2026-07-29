@@ -12,7 +12,8 @@
         public static class Properties
         {
             public const string CustomSet = "Custom";
-            public const string SummarySet = "ExtendedSummaryInformation";
+            public const string ExtendedSummarySet = "ExtendedSummaryInformation";
+            public const string SummarySet = "SummaryInformation";
             public const string MechanicalModeling = "MechanicalModeling";
             public const string Type = "Typ";
             public const string Status = "Status";
@@ -23,6 +24,7 @@
             public const string DxfDate = "DXF";
             public const string SizeX = "Model_Rozwinięcia_RozmiarArkuszaX";
             public const string SizeY = "Model_Rozwinięcia_RozmiarArkuszaY";
+            public const string Title = "Title";
         }
 
         public static class PartTypes
@@ -47,6 +49,8 @@
             public const string Quantity = "Ilość";
             public const string Type = "Typ";
             public const string Thumbnail = "Miniatura";
+            public const string Name = "Nazwa";
+            public const string Bending = "Gięcia";
         }
 
         public static class Styles

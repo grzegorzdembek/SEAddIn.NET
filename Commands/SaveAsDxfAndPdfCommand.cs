@@ -9,9 +9,16 @@ namespace SolidEdgeAdd_In.Commands
             Stopwatch stopwatch = Stopwatch.StartNew();
             try
             {
-                var (isValid, dxfPath, pdfPath) = Helper.Paths(draft); if (isValid) { Helper.Save(draft, dxfPath, pdfPath); }
+                (bool isSaved, string dxfPath, string pdfPath) = Helper.GetData(draft);
 
-                stopwatch.Stop(); string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff"); MessageBox.Show($"Czas wykonywania: {elapsedTime}", "Zakończono", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (isSaved)
+                { 
+                    Helper.Save(draft, dxfPath, pdfPath); 
+                }
+
+                stopwatch.Stop(); 
+                string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff");
+                MessageBox.Show($"Czas wykonywania: {elapsedTime}", "Zakończono", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
         }
