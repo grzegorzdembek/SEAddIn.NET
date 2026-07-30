@@ -24,7 +24,10 @@
             public const string DxfDate = "DXF";
             public const string SizeX = "Model_Rozwinięcia_RozmiarArkuszaX";
             public const string SizeY = "Model_Rozwinięcia_RozmiarArkuszaY";
-            public const string Title = "Title";
+            public const string TitleEng = "Title";
+            public const string TitlePl = "Tytuł";
+            public const string Subject = "Subject";
+            public const string Template = "Template";
         }
 
         public static class PartTypes
@@ -50,7 +53,7 @@
             public const string Type = "Typ";
             public const string Thumbnail = "Miniatura";
             public const string Name = "Nazwa";
-            public const string Bending = "Gięcia";
+            public const string Flanges = "Gięcia";
         }
 
         public static class Styles

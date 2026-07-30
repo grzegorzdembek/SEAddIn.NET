@@ -33,11 +33,12 @@ global using SeDraft = SolidEdgeDraft.DraftDocument;
 global using SeOccurrences = SolidEdgeAssembly.Occurrences;
 global using SeOccurrence = SolidEdgeAssembly.Occurrence;
 
-
 global using SeBends = SolidEdgePart.Bends; 
 global using SeModels = SolidEdgePart.Models;
 global using SeModel = SolidEdgePart.Model;
 global using SeFlatPatternModels = SolidEdgePart.FlatPatternModels;
+global using SeFlatPatternModel = SolidEdgePart.FlatPatternModel;
+global using SeFlanges = SolidEdgePart.Flanges;
 
 global using SeRefPlane = SolidEdgePart.RefPlane;
 global using SeRefAxis = SolidEdgePart.RefAxis;

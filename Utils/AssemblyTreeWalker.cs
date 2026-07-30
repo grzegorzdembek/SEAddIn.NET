@@ -87,9 +87,17 @@ namespace SolidEdgeAdd_In.Utils
                         string sizeY = properties.SizeY;
 
                         string dxfDate = properties.DxfDate;
-                        string title = properties.Title;
 
-                        
+                        /*
+                         * users can have different language settings 
+                        */
+
+                        string title = properties.TitleEng;
+                        if (string.IsNullOrEmpty(title))
+                        {
+                            title = properties.TitlePl;
+                        }
+
                         if (!data.ContainsKey(filePath)) 
                         { 
                             data[filePath] = new FileData 

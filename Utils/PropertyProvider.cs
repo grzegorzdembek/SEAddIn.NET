@@ -41,7 +41,9 @@ namespace SolidEdgeAdd_In.Utils
             _docPropertySets = (SePropertySets)document.Properties; 
         }
 
-        public string Title => GetPropertyString(Constants.Properties.SummarySet, Constants.Properties.Title); 
+        public string TitleEng  => GetPropertyString(Constants.Properties.SummarySet, Constants.Properties.TitleEng); 
+
+        public string TitlePl  => GetPropertyString(Constants.Properties.SummarySet, Constants.Properties.TitlePl); 
 
         public string Type 
         { 

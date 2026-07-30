@@ -56,9 +56,9 @@ namespace SolidEdgeAdd_In.Commands
             SeDocument document = null; 
             SeModels models = null; 
             SeModel model = null;
-            SeBends bends = null;
+            SeFlanges flanges = null;
             SeFlatPatternModels flatPatterns = null;
-            
+           
             ExcelApp excelApp = null; 
             ExcelWorkbooks workbooks = null; 
             ExcelWorkbook workbook = null; 
@@ -105,7 +105,7 @@ namespace SolidEdgeAdd_In.Commands
                         Constants.ExcelHeaders.Thickness, 
                         Constants.ExcelHeaders.Width, 
                         Constants.ExcelHeaders.Length, 
-                        Constants.ExcelHeaders.Bending, 
+                        Constants.ExcelHeaders.Flanges, 
                         Constants.ExcelHeaders.Material, 
                         Constants.ExcelHeaders.Quantity 
                     } 
@@ -136,6 +136,7 @@ namespace SolidEdgeAdd_In.Commands
 
                 foreach (var item in data)
                 {
+
                     /*
                      * values for path
                      */
@@ -150,10 +151,16 @@ namespace SolidEdgeAdd_In.Commands
                      */
 
                     string sizeX = item.Value.SizeX; 
-                    string sizeY = item.Value.SizeY; 
+                    string sizeY = item.Value.SizeY;
+                    
                     string title = item.Value.Title;
-                    string dxfDate = item.Value.DxfDate;
-                    int bendsCount = 0;
+
+                    if (string.IsNullOrEmpty(title))
+                    {
+                        title = "-";
+                    }
+
+                    string bends = "-";
 
                     /*
                      * different locations and filenames
@@ -169,71 +176,74 @@ namespace SolidEdgeAdd_In.Commands
                      * conditions for generating DXF
                      */
 
+                    string dxfDate = item.Value.DxfDate;
                     bool needGenerationDxf = false;
 
-                    if (string.IsNullOrEmpty(dxfDate) || !File.Exists(subDxfPath) || !File.Exists(mainDxfPath))
+                    if (string.IsNullOrEmpty(dxfDate))
                     {
                         needGenerationDxf = true;
                     }
 
                     /*
-                     * generation required open document
+                     * generation and gettin flanges count required open document
                      */
 
                     bool isOpen = false;
                     try
                     {
+
+                        document = CoreUtils.GetOpenDocument(app, item.Key);
+                        isOpen = true;
+
+                        if (document is SePart part)
+                        {
+                            models = part.Models;
+                            flatPatterns = part.FlatPatternModels;
+                        }
+                        else if (document is SeSheetMetal sheetMetal)
+                        {
+                            models = sheetMetal.Models;
+                            flatPatterns = sheetMetal.FlatPatternModels;
+                        }
+
+                        if (flatPatterns == null || models == null || flatPatterns.Count == 0 || models.Count == 0)
+                        {
+                            logger.LogSkip(name, "Brakuje rozwinięcia.");
+                            continue;
+                        }
+
+                        model = models.Item(1);
+                        flanges = model.Flanges;
+                        int flangesCount = flanges.Count;
+
+                        if (flangesCount != 0)
+                        {
+                            bends = flangesCount.ToString();
+                        }
+
                         if (needGenerationDxf)
                         {
-                            document = CoreUtils.GetOpenDocument(app, item.Key); 
-                            isOpen = true;
-                           
-                            if (document is SePart part) 
-                            { 
-                                models = part.Models;
-                                flatPatterns = part.FlatPatternModels;
-
-                                model = models.Item(1);
-                                bends = model.Bends;
-                                bendsCount = bends.Count;
-                            }
-                            else if (document is SeSheetMetal sheetMetal) 
-                            {
-                                models = sheetMetal.Models;
-                                flatPatterns = sheetMetal.FlatPatternModels;
-
-                                model = models.Item(1);
-                                bends = model.Bends;
-                                bendsCount = bends.Count;
-                            }
-
-                            if (flatPatterns == null || models == null || flatPatterns.Count == 0 || models.Count == 0)
-                            { 
-                                logger.LogSkip(name, "Brak rozwinięcia"); 
-                                continue; 
-                            }
-
                             if (File.Exists(mainDxfPath))
-                            { 
-                                try 
-                                { 
-                                    File.Delete(mainDxfPath); 
-                                } 
-                                catch 
+                            {
+                                try
+                                {
+                                    File.Delete(mainDxfPath);
+                                }
+                                catch
                                 {
                                     /* */
-                                } 
+                                }
                             }
 
-                            using var properties = new PropertyProvider(document); properties.UpdateDxfDate(); 
+                            using var properties = new PropertyProvider(document); properties.UpdateDxfDate();
 
-                            models.SaveAsFlatDXFEx(mainDxfPath, null, null, null, true); 
+                            models.SaveAsFlatDXFEx(mainDxfPath, null, null, null, true);
 
-                            logger.LogSuccess($"{name} Utworzono nowy plik DXF");
+                            logger.LogSuccess($"{name} - Utworzono nowy Dxf rozwinięcia.");
                         }
-                        else 
-                        { 
-                            logger.LogSuccess($"{name} Plik DXF już istnieje lub posiada właściwość DXF"); 
+                        else
+                        {
+                            logger.LogSuccess($"{name} - Plik posiada właściwość Dxf.");
                         }
 
                         if (File.Exists(mainDxfPath))
@@ -245,10 +255,14 @@ namespace SolidEdgeAdd_In.Commands
                             excelData[dataRowIndex, 2] = $"{thickness} mm";
                             excelData[dataRowIndex, 3] = sizeX; 
                             excelData[dataRowIndex, 4] = sizeY; 
-                            excelData[dataRowIndex, 5] = bendsCount;
+                            excelData[dataRowIndex, 5] = bends;
                             excelData[dataRowIndex, 6] = material;
                             excelData[dataRowIndex, 7] = count;
                             dataRowIndex++;
+                        }
+                        else
+                        {
+                            logger.LogError(name, "Plik ma właściwość Dxf, ale nie znaleziono pliku");
                         }
                     }
                     catch (Exception ex)
@@ -258,7 +272,7 @@ namespace SolidEdgeAdd_In.Commands
                     }
                     finally
                     {
-                        CoreUtils.ReleaseCom(ref bends);
+                        CoreUtils.ReleaseCom(ref flanges);
                         CoreUtils.ReleaseCom(ref model);
                         CoreUtils.ReleaseCom(ref flatPatterns);
                         CoreUtils.ReleaseCom(ref models);
@@ -286,7 +300,7 @@ namespace SolidEdgeAdd_In.Commands
                     try
                     {
                         startCell = (ExcelRange)cells[2, 1]; 
-                        endCell = (ExcelRange)cells[dataRowIndex + 1, 6]; 
+                        endCell = (ExcelRange)cells[dataRowIndex + 1, 8]; 
                         writeRange = worksheet.Range[startCell, endCell]; 
                         writeRange.Value = excelData;
                     }
