@@ -8,6 +8,9 @@ namespace SolidEdgeAdd_In.Processors
         private readonly SeApp _application;
         private readonly Logger _logger;
 
+        private string _assemblyFullName;
+        private string _assemblyDirectory;
+
         private int _multiplier;
         private string _subDirectory;
         private Dictionary<string, FileData> _occurrencesData;
@@ -22,6 +25,9 @@ namespace SolidEdgeAdd_In.Processors
 
         public bool Initialize()
         {
+            _assemblyFullName = _assembly.FullName;
+            _assemblyDirectory = Path.GetDirectoryName(_assemblyFullName);
+
             if (!TryGetMultiplier())
             {
                 return false;
@@ -64,7 +70,7 @@ namespace SolidEdgeAdd_In.Processors
             dynamic headerBorders = null;
             dynamic usedBorders = null;
 
-            string mainDirectory = Path.GetDirectoryName(_assembly.FullName);
+            string mainDirectory = _assemblyDirectory;
 
             try
             {
@@ -221,13 +227,7 @@ namespace SolidEdgeAdd_In.Processors
                         {
                             if (File.Exists(subDxfPath))
                             {
-                                try
-                                {
-                                    File.Delete(subDxfPath);
-                                }
-                                catch
-                                {
-                                }
+                                try { File.Delete(subDxfPath); } catch { }
                             }
 
                             using var properties = new PropertyProvider(document);
@@ -285,9 +285,7 @@ namespace SolidEdgeAdd_In.Processors
                                 document.Save();
                                 document.Close(true);
                             }
-                            catch
-                            {
-                            }
+                            catch { }
                         }
 
                         CoreUtils.ReleaseCom(ref document);
@@ -347,13 +345,7 @@ namespace SolidEdgeAdd_In.Processors
 
                 if (workbook != null)
                 {
-                    try
-                    {
-                        workbook.Close(false);
-                    }
-                    catch
-                    {
-                    }
+                    try { workbook.Close(false); } catch { }
                 }
 
                 CoreUtils.ReleaseCom(ref workbook);
@@ -361,13 +353,7 @@ namespace SolidEdgeAdd_In.Processors
 
                 if (excelApp != null)
                 {
-                    try
-                    {
-                        excelApp.Quit();
-                    }
-                    catch
-                    {
-                    }
+                    try { excelApp.Quit(); } catch { }
                 }
 
                 CoreUtils.ReleaseCom(ref excelApp);
@@ -401,11 +387,11 @@ namespace SolidEdgeAdd_In.Processors
 
         private void SetSubDirectory()
         {
-            string fileName = Path.GetFileNameWithoutExtension(_assembly.FullName);
+            string fileName = Path.GetFileNameWithoutExtension(_assemblyFullName);
             string number = fileName.Length >= 4 ? fileName.Substring(0, 4) : fileName;
             string date = DateTime.Now.ToString("yyyy-MM-dd");
 
-            string packagesDirectory = Path.Combine(Path.GetDirectoryName(_assembly.FullName), Constants.Folders.Packages);
+            string packagesDirectory = Path.Combine(_assemblyDirectory, Constants.Folders.Packages);
 
             if (!Directory.Exists(packagesDirectory))
             {

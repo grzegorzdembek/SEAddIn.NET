@@ -10,14 +10,14 @@ namespace SolidEdgeAdd_In.Processors
         private string _excelPath;
         private string _drawingsDirectory;
 
-        private List<string> _pdfFiles;
-        private List<string> _dxfFiles;
+        private List<(string Name, string Path)> _pdfFiles;
+        private List<(string Name, string Path)> _dxfFiles;
 
         public CopyDrawingsProcessor(SeDocument document)
         {
             _document = document;
-            _pdfFiles = new List<string>();
-            _dxfFiles = new List<string>();
+            _pdfFiles = new List<(string Name, string Path)>();
+            _dxfFiles = new List<(string Name, string Path)>();
         }
 
         public bool Initialize()
@@ -28,7 +28,6 @@ namespace SolidEdgeAdd_In.Processors
             }
 
             _projectDirectory = Path.GetDirectoryName(_document.FullName);
-
             string packagesDirectory = Path.Combine(_projectDirectory, Constants.Folders.Packages);
 
             if (!Directory.Exists(packagesDirectory))
@@ -65,8 +64,13 @@ namespace SolidEdgeAdd_In.Processors
             _excelPath = excelFiles[0];
             _drawingsDirectory = Path.Combine(_selectedDirectory, Constants.Folders.Drawings);
 
-            _pdfFiles = Directory.GetFiles(_projectDirectory, "*.pdf", SearchOption.TopDirectoryOnly).ToList();
-            _dxfFiles = Directory.GetFiles(_projectDirectory, "*.dxf", SearchOption.TopDirectoryOnly).ToList();
+            _pdfFiles = Directory.GetFiles(_projectDirectory, "*.pdf", SearchOption.TopDirectoryOnly)
+                                 .Select(f => (Path.GetFileNameWithoutExtension(f), f))
+                                 .ToList();
+
+            _dxfFiles = Directory.GetFiles(_projectDirectory, "*.dxf", SearchOption.TopDirectoryOnly)
+                                 .Select(f => (Path.GetFileNameWithoutExtension(f), f))
+                                 .ToList();
 
             return true;
         }
@@ -169,10 +173,10 @@ namespace SolidEdgeAdd_In.Processors
                             }
                             else
                             {
-                                var matchingPdfs = _pdfFiles.Where(f => Path.GetFileNameWithoutExtension(f).Equals(partName, StringComparison.OrdinalIgnoreCase)).ToList();
+                                var matchingPdfs = _pdfFiles.Where(f => f.Name.Equals(partName, StringComparison.OrdinalIgnoreCase)).ToList();
                                 foreach (var pdf in matchingPdfs)
                                 {
-                                    File.Copy(pdf, expectedPdfPath, true);
+                                    File.Copy(pdf.Path, expectedPdfPath, true);
                                     isPdfReady = true;
                                 }
                             }
@@ -182,11 +186,11 @@ namespace SolidEdgeAdd_In.Processors
                                 isDxfReady = true;
                             }
                             else
-                            {
-                                var matchingDxfs = _dxfFiles.Where(f => Path.GetFileNameWithoutExtension(f).Equals(partName, StringComparison.OrdinalIgnoreCase)).ToList();
+                            {                  
+                                var matchingDxfs = _dxfFiles.Where(f => f.Name.Equals(partName, StringComparison.OrdinalIgnoreCase)).ToList();
                                 foreach (var dxf in matchingDxfs)
                                 {
-                                    File.Copy(dxf, expectedDxfPath, true);
+                                    File.Copy(dxf.Path, expectedDxfPath, true);
                                     isDxfReady = true;
                                 }
                             }
@@ -210,15 +214,11 @@ namespace SolidEdgeAdd_In.Processors
                     headerCell = (ExcelRange)cells[1, drawingsColIndex];
                     headerFont = headerCell.Font;
                     headerFont.Bold = true;
-
                     headerInterior = headerCell.Interior;
                     headerInterior.Color = ColorTranslator.ToOle(Color.LightGray);
-
                     expandedRange.HorizontalAlignment = Microsoft.Office.Interop.Excel.XlHAlign.xlHAlignCenter;
-
                     expandedBorders = expandedRange.Borders;
                     expandedBorders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
-
                     columns.AutoFit();
                 }
 
@@ -240,13 +240,7 @@ namespace SolidEdgeAdd_In.Processors
 
                 if (workbook != null)
                 {
-                    try
-                    {
-                        workbook.Close(false);
-                    }
-                    catch
-                    {
-                    }
+                    try { workbook.Close(false); } catch { }
                 }
 
                 CoreUtils.ReleaseCom(ref workbook);
@@ -254,13 +248,7 @@ namespace SolidEdgeAdd_In.Processors
 
                 if (excelApp != null)
                 {
-                    try
-                    {
-                        excelApp.Quit();
-                    }
-                    catch
-                    {
-                    }
+                    try { excelApp.Quit(); } catch { }
                 }
                 CoreUtils.ReleaseCom(ref excelApp);
             }

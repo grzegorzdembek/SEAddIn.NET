@@ -5,6 +5,11 @@ namespace SolidEdgeAdd_In.Processors
     public class ExportPartsListProcessor
     {
         private readonly SeAssembly _assembly;
+
+        
+        private string _assemblyFullName;
+        private string _assemblyDirectory;
+
         private int _multiplier;
         private bool _hasShots;
         private List<string> _shots;
@@ -17,6 +22,10 @@ namespace SolidEdgeAdd_In.Processors
 
         public bool Initialize()
         {
+            
+            _assemblyFullName = _assembly.FullName;
+            _assemblyDirectory = Path.GetDirectoryName(_assemblyFullName);
+
             SeDocument document = (SeDocument)_assembly;
             using var properties = new PropertyProvider(document);
 
@@ -108,7 +117,9 @@ namespace SolidEdgeAdd_In.Processors
                 draft = (SeDraft)documents.Add("SolidEdge.DraftDocument", Missing.Value);
                 sheet = draft.ActiveSheet;
                 modelLinks = draft.ModelLinks;
-                modelLink = modelLinks.Add(_assembly.FullName);
+
+                
+                modelLink = modelLinks.Add(_assemblyFullName);
                 drawingViews = sheet.DrawingViews;
 
                 drawingView = drawingViews.AddAssemblyView(modelLink, SeViewOrientation.igFrontView, 0.1, 0.2, 0.2, SeAssemblyDrawingViewType.seAssemblyDesignedView);
@@ -142,13 +153,7 @@ namespace SolidEdgeAdd_In.Processors
 
                 if (draft != null)
                 {
-                    try
-                    {
-                        draft.Close(false);
-                    }
-                    catch
-                    {
-                    }
+                    try { draft.Close(false); } catch { }
                 }
 
                 CoreUtils.ReleaseCom(ref draft);
@@ -170,7 +175,8 @@ namespace SolidEdgeAdd_In.Processors
             SeDocument document = null;
             SeWindow window = null;
 
-            string shotsLocation = Path.Combine(Path.GetDirectoryName(_assembly.FullName), Constants.Folders.Thumbnails);
+            
+            string shotsLocation = Path.Combine(_assemblyDirectory, Constants.Folders.Thumbnails);
 
             if (!Directory.Exists(shotsLocation))
             {
@@ -220,13 +226,7 @@ namespace SolidEdgeAdd_In.Processors
                         CoreUtils.ReleaseCom(ref window);
                         if (document != null)
                         {
-                            try
-                            {
-                                document.Close(false);
-                            }
-                            catch
-                            {
-                            }
+                            try { document.Close(false); } catch { }
                         }
                         CoreUtils.ReleaseCom(ref document);
                     }
@@ -277,7 +277,9 @@ namespace SolidEdgeAdd_In.Processors
 
                 ExcelWrapper.TypeMemory(data, typeNumber, rowCount);
                 ExcelWrapper.CountMemory(data, _multiplier, countNumber, rowCount);
-                RaportGenerationUtils.DxfsMemory(Path.GetDirectoryName(_assembly.FullName), data, typeNumber, nameNumber, dxfColNumber, rowCount);
+
+                
+                RaportGenerationUtils.DxfsMemory(_assemblyDirectory, data, typeNumber, nameNumber, dxfColNumber, rowCount);
 
                 expandedRange.Value2 = data;
 
@@ -285,7 +287,9 @@ namespace SolidEdgeAdd_In.Processors
                 ExcelWrapper.Colors(worksheet, typeNumber);
                 ExcelWrapper.Edit(worksheet);
 
-                string shotDir = Path.Combine(Path.GetDirectoryName(_assembly.FullName), Constants.Folders.Thumbnails);
+                
+                string shotDir = Path.Combine(_assemblyDirectory, Constants.Folders.Thumbnails);
+
                 if (!Directory.Exists(shotDir))
                 {
                     Directory.CreateDirectory(shotDir);
@@ -307,7 +311,7 @@ namespace SolidEdgeAdd_In.Processors
 
         private void Export(ExcelWorkbook workbook)
         {
-            string partsListPath = Path.Combine(Path.GetDirectoryName(_assembly.FullName), Path.GetFileNameWithoutExtension(_assembly.FullName) + "_PartsList.xlsx");
+            string partsListPath = Path.Combine(_assemblyDirectory, Path.GetFileNameWithoutExtension(_assemblyFullName) + "_PartsList.xlsx");
 
             if (File.Exists(partsListPath))
             {
