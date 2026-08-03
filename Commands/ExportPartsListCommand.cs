@@ -1,4 +1,4 @@
-using Helper = SolidEdgeAdd_In.Helpers.ExportPartsListHelper;
+using SolidEdgeAdd_In.Processors;
 
 namespace SolidEdgeAdd_In.Commands
 {
@@ -6,22 +6,32 @@ namespace SolidEdgeAdd_In.Commands
     {
         public static void Execute(SeAssembly assembly)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew(); SeApp application = assembly.Application; ExcelApp excelApp = null; ExcelWorkbooks workbooks = null; ExcelWorkbook workbook = null; ExcelSheets sheets = null; ExcelWorksheet worksheet = null;
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            SeApp application = assembly.Application;
 
             try
             {
                 application.DelayCompute = true;
 
-                var (isConfirmed, multiplier) = Helper.GetMultiplier(assembly); if (!isConfirmed) return;
+                var processor = new ExportPartsListProcessor(assembly);
 
-                Helper.CopyPartsList(assembly); bool hasShots = Helper.HasShots(); var shots = Helper.GetShots(assembly, hasShots);
+                if (processor.Initialize())
+                {
+                    processor.Process();
+                }
 
-                Helper.ExcelObjects(out excelApp, out workbooks, out workbook, out sheets, out worksheet); Helper.EditWorksheet(assembly, shots, hasShots, workbook, worksheet, multiplier); Helper.Export(assembly, excelApp, workbooks, workbook, worksheet);
-
-                stopwatch.Stop(); string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff"); MessageBox.Show($"Czas wykonywania: {elapsedTime}", "Zakończono", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                stopwatch.Stop();
+                string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff");
+                MessageBox.Show($"Execution time: {elapsedTime}", "Completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
-            finally { application.DelayCompute = false; Helper.Release(ref excelApp, ref workbooks, ref workbook, ref sheets, ref worksheet); }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Exception: {ex.Message}");
+            }
+            finally
+            {
+                application.DelayCompute = false;
+            }
         }
     }
 }

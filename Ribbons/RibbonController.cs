@@ -39,9 +39,7 @@ namespace SolidEdgeAdd_In.Ribbons
 
                     try
                     {
-                        if (_addIn.AddInEx != null)
-                        {
-                            _addIn.AddInEx.SetAddInInfoEx(
+                        _addIn.AddInEx?.SetAddInInfoEx(
                                 _addIn.NativeResourcesDllPath,
                                 environmentCategory.ToString("B"),
                                 $"{tab.Name}\n{group.Name}",
@@ -50,11 +48,10 @@ namespace SolidEdgeAdd_In.Ribbons
                                 controlCount,
                                 ref commandNames,
                                 ref commandIDs);
-                        }
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Błąd podczas dodawania grupy: {ex.Message}");
+                        MessageBox.Show($"{ex.Message}");
                     }
                 }
             }
@@ -79,7 +76,10 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                 }
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message); }
+            catch (Exception ex) 
+            { 
+                MessageBox.Show(ex.Message); 
+            }
         }
 
         public void OnCommandHelp(int hFrameWnd, int HelpCommandID, int CommandID){}

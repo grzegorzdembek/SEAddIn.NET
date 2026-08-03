@@ -1,4 +1,6 @@
-﻿namespace SolidEdgeAdd_In.Utils
+﻿using System.Security.Policy;
+
+namespace SolidEdgeAdd_In.Utils
 {
     public static class Constants
     {
@@ -28,6 +30,8 @@
             public const string TitlePl = "Tytuł";
             public const string Subject = "Subject";
             public const string Template = "Template";
+            public const string Color = "Color";
+            public const string Finish = "Finish";
         }
 
         public static class PartTypes
@@ -42,18 +46,22 @@
 
         public static class ExcelHeaders
         {
+            public const string Lp = "Lp";
             public const string PartNumber = "Nr części";
             public const string Number = "Numer części";
             public const string Drawings = "Rysunki";
             public const string Thickness = "Grubość";
-            public const string Width = "Szerokość";
-            public const string Length = "Długość";
+            public const string Width = "Szerokość [mm]";
+            public const string Length = "Długość [mm]";
             public const string Material = "Gatunek";
             public const string Quantity = "Ilość";
             public const string Type = "Typ";
             public const string Thumbnail = "Miniatura";
             public const string Name = "Nazwa";
             public const string Flanges = "Gięcia";
+            public const string Color = "Kolor";
+            public const string Finish = "Wykończenie";
+            public const string Date = "Dxf";
         }
 
         public static class Styles

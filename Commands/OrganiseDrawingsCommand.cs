@@ -1,16 +1,16 @@
-using SolidEdgeAdd_In.Processors;
+﻿using SolidEdgeAdd_In.Processors;
 
 namespace SolidEdgeAdd_In.Commands
 {
-    public class SaveAsDxfAndPdfCommand
+    public class OrganiseDrawingsCommand
     {
-        public static void Execute(SeDraft draft)
+        public static void Execute(SeAssembly assembly)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             try
             {
-                var processor = new SaveAsDxfAndPdfProcessor(draft);
+                var processor = new OrganiseDrawingsProcessor(assembly);
 
                 if (processor.Initialize())
                 {

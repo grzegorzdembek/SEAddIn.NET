@@ -1,4 +1,4 @@
-﻿using Helper = SolidEdgeAdd_In.Helpers.SaveAsDxfHelper;
+﻿using SolidEdgeAdd_In.Processors;
 
 namespace SolidEdgeAdd_In.Commands
 {
@@ -7,15 +7,24 @@ namespace SolidEdgeAdd_In.Commands
         public static void Execute(SeDocument document)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
+
             try
             {
-                string path = Helper.GetPath(document); (bool isConfirmed, string editedPath) = Helper.GetEditedPath(path);
+                var processor = new SaveAsDxfProcessor(document);
 
-                Helper.Save(document, isConfirmed, editedPath);
+                if (processor.Initialize())
+                {
+                    processor.Process();
+                }
 
-                stopwatch.Stop(); string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff"); MessageBox.Show($"Czas wykonywania: {elapsedTime}", "Zakończono", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                stopwatch.Stop();
+                string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff");
+                MessageBox.Show($"Execution time: {elapsedTime}", "Completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Exception: {ex.Message}");
+            }
         }
     }
 }

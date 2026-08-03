@@ -1,4 +1,4 @@
-﻿using Helper = SolidEdgeAdd_In.Helpers.SetCountPropertyHelper;
+﻿using SolidEdgeAdd_In.Processors;
 
 namespace SolidEdgeAdd_In.Commands
 {
@@ -6,22 +6,34 @@ namespace SolidEdgeAdd_In.Commands
     {
         public static void Execute(SeAssembly assembly)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew(); SeApp application = assembly.Application;
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            SeApp application = assembly.Application;
 
             try
             {
-                application.DelayCompute = true; application.ScreenUpdating = false;
+                application.DelayCompute = true;
+                application.ScreenUpdating = false;
 
-                var (isConfirmed, multiplier) = Helper.GetMultiplier(assembly); if (!isConfirmed) return;
+                var processor = new SetCountPropertyProcessor(assembly);
 
-                var occurrences = Helper.GetData(assembly); var feedback = Helper.SetAndGetFeedback(assembly, occurrences, multiplier);
+                if (processor.Initialize())
+                {
+                    processor.Process();
+                }
 
-                Helper.DisplayFeedback(feedback);
-
-                stopwatch.Stop(); string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff"); MessageBox.Show($"Czas wykonywania: {elapsedTime}", "Zakończono", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                stopwatch.Stop();
+                string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff");
+                MessageBox.Show($"Execution time: {elapsedTime}", "Completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
-            finally { application.DelayCompute = false; application.ScreenUpdating = true; }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Exception: {ex.Message}");
+            }
+            finally
+            {
+                application.DelayCompute = false;
+                application.ScreenUpdating = true;
+            }
         }
     }
 }

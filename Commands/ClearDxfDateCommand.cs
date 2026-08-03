@@ -1,4 +1,4 @@
-﻿using Helper = SolidEdgeAdd_In.Helpers.ClearDxfDateHelper;
+﻿using SolidEdgeAdd_In.Processors;
 
 namespace SolidEdgeAdd_In.Commands
 {
@@ -6,18 +6,30 @@ namespace SolidEdgeAdd_In.Commands
     {
         public static void Execute(SeAssembly assembly)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew(); SeApp application = assembly.Application;
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            SeApp application = assembly.Application;
 
             try
             {
-                application.DelayCompute = true; application.ScreenUpdating = false;
+                application.DelayCompute = true;
+                application.ScreenUpdating = false;
 
-                Helper.ProcessClearing(assembly);
+                var processor = new ClearDxfDateProcessor(assembly);
+                processor.Process();
 
-                stopwatch.Stop(); string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff"); MessageBox.Show($"Czas wykonywania: {elapsedTime}", "Zakończono", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                stopwatch.Stop();
+                string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff");
+                MessageBox.Show($"Execution time: {elapsedTime}", "Completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
-            finally { application.DelayCompute = false; application.ScreenUpdating = true; }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Exception: {ex.Message}");
+            }
+            finally
+            {
+                application.DelayCompute = false;
+                application.ScreenUpdating = true;
+            }
         }
     }
 }

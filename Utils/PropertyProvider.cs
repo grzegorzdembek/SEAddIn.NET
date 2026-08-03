@@ -14,6 +14,8 @@ namespace SolidEdgeAdd_In.Utils
         public string SizeX { get; set; }
         public string SizeY { get; set; }
         public string Title { get; set; }
+        public string Color { get; set; }
+        public string Finish { get; set; }
     }
 
     public class PropertyProvider : IDisposable
@@ -40,6 +42,10 @@ namespace SolidEdgeAdd_In.Utils
             _isFileMode = false;
             _docPropertySets = (SePropertySets)document.Properties; 
         }
+
+        public string Color => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.Color);
+
+        public string Finish => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.Finish);
 
         public string TitleEng  => GetPropertyString(Constants.Properties.SummarySet, Constants.Properties.TitleEng); 
 

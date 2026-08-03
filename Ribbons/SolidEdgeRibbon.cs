@@ -7,161 +7,312 @@ namespace SolidEdgeAdd_In.Ribbons
         public SolidEdgeRibbon(SeApp application)
         {
             this.Application = application;
-            var tab = AddTab("Dodatki");
-            var draftGroup = tab.AddGroup("Rysunek");
-            var partGroup = tab.AddGroup("Część");
-            var assemblyGroup1 = tab.AddGroup("Złożenie");
-            var assemblyGroup2 = tab.AddGroup("Złożenie");
-            var generalGroup = tab.AddGroup("Ogólne");
 
-            var saveDraftButton = new RibbonButton(1)
+            RibbonTab tab = AddTab("AddIns");
+
+            RibbonGroup draftGroup = tab.AddGroup("Draft Environment");
+            RibbonGroup partGroup = tab.AddGroup("Part Environment");
+            RibbonGroup assemblyGroup1 = tab.AddGroup("Assembly Environment");
+            RibbonGroup assemblyGroup2 = tab.AddGroup("Assembly Environment");
+            RibbonGroup generalGroup = tab.AddGroup("General");
+
+            /*- _____1_____ -*/
+            RibbonButton saveDraftButton = new (1)
             {
-                Label = "Zapisz PDF i DXF",
-                ScreenTip = "Zapisuje otwarty rysunek jako PDF i DXF",
-                SuperTip = "Zapisany zostanie PDF i DXF rysunku, w tej samej lokalizacji"
+                Label = "Save PDF and DXF",
+                ScreenTip = "Saves the active drawing as PDF and DXF.",
+                SuperTip = "The drawing will be saved as both PDF and DXF in the project directory."
             };
+
             saveDraftButton.Click += (control) =>
             {
                 try
                 {
-                    var document = application.ActiveDocument; 
-                    if (document is SeDraft draft) SaveAsDxfAndPdfCommand.Execute(draft);
-                    else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
+                    SeDocument document = application.ActiveDocument;
+                    if (document is SeDraft draft)
+                    { 
+                        SaveAsDxfAndPdfCommand.Execute(draft);
+                    }
+                    else
+                    { 
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
                 }
-                catch (Exception ex) { MessageBox.Show(ex.Message); }
+                catch (Exception ex) 
+                { 
+                    MessageBox.Show(ex.Message); 
+                }
             };
+
             draftGroup.AddControl(saveDraftButton);
 
-            var saveFlatPatternButton = new RibbonButton(2)
+            /*- _____2_____ -*/
+            RibbonButton saveFlatPatternButton = new (2)
             {
-                Label = "Zapisz rozwinięcie",
-                ScreenTip = "Zapisuje rozwinięcie jako DXF",
-                SuperTip = "Zapisany zostanie DXF rozwinięcia otwartej blachy, w tej samej lokalizacji"
+                Label = "Save Flat Pattern",
+                ScreenTip = "Saves the flat pattern as a DXF.",
+                SuperTip = "The flat pattern will be saved as a DXF in the project directory."
             };
+
             saveFlatPatternButton.Click += (control) =>
             {
                 try
                 {
-                    var document = application.ActiveDocument;
+                    SeDocument document = application.ActiveDocument;
                     if (document is SePart partDocument || document is SeSheetMetal sheetMetalDocument)
                     {
                         SaveAsDxfCommand.Execute(document);
                     }
-                    else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
+                    else
+                    { 
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
                 }
-                catch (Exception ex) { MessageBox.Show(ex.Message); }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message); 
+                }
             };
+
             partGroup.AddControl(saveFlatPatternButton);
 
-            var saveStepButton = new RibbonButton(3)
+            /*- _____3_____ -*/
+            RibbonButton saveStepButton = new (3)
             {
-                Label = "Zapisz STEP",
-                ScreenTip = "Zapisuje otwarty plik jako STEP",
-                SuperTip = "Zapisany zostanie STEP otwartego pliku, w tej samej lokalizacji"
+                Label = "Save STEP",
+                ScreenTip = "Saves the active document as a STEP file.",
+                SuperTip = "The active document will be saved as a STEP file in the project directory."
             };
+
             saveStepButton.Click += (control) =>
             {
                 try
                 {
-                    var document = application.ActiveDocument;
+                    SeDocument document = application.ActiveDocument;
                     if (document is SePart partDocument || document is SeSheetMetal sheetMetalDocument)
                     {
                         SaveAsStepCommand.Execute(document);
                     }
-                    else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
+                    else
+                    {
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
                 }
-                catch (Exception ex) { MessageBox.Show(ex.Message); }
+                catch (Exception ex) 
+                { 
+                    MessageBox.Show(ex.Message); 
+                }
             };
+
             partGroup.AddControl(saveStepButton);
 
-            var exportDxfsButton = new RibbonButton(4)
+            /*- _____4_____ -*/
+            RibbonButton exportDxfsButton = new (4)
             {
-                Label = "Eksportuj DFXy",
-                ScreenTip = "Zapisuje DXFy wszystkich części (par) i blach (psm) z otwartego złożenia",
-                SuperTip = "Zapisane zostaną DXFy wszystkich części (par) i blach (psm) z otwartego złożenia, w tej samej lokalizacji"
+                Label = "Export DXFs",
+                ScreenTip = "Exports DXFs of all flat patterns for files - (.par) and (.psm) from the open assembly.",
+                SuperTip = "The DXFs of all flat patterns for files - (par) and (psm) from the open assembly will be exported with excel report."
             };
+
             exportDxfsButton.Click += (control) =>
             {
                 try
                 {
-                    var document = application.ActiveDocument;
-                    if (document is SeAssembly assembly) ExportDxfsCommand.Execute(assembly);
-                    else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
+                    SeDocument document = application.ActiveDocument;
+                    if (document is SeAssembly assembly)
+                    {
+                        ExportDxfsCommand.Execute(assembly);
+                    }
+                    else 
+                    {
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
                 }
-                catch (Exception ex) { MessageBox.Show(ex.Message); }
+                catch (Exception ex) 
+                { 
+                    MessageBox.Show(ex.Message); 
+                }
             };
             assemblyGroup1.AddControl(exportDxfsButton);
 
-            var exportPartsListButton = new RibbonButton(5)
+            /*- _____5_____ -*/
+            RibbonButton exportPartsListButton = new (5)
             {
-                Label = "Eksportuj listę części",
-                ScreenTip = "Zapisuje listę części z rysunku otwartego złożenia do Excela",
-                SuperTip = "Zapisany zostanie arkusz Excela z tabelą (lista części) otwartego złożenia, w tej samej lokalizacji"
+                Label = "Export Parts List",
+                ScreenTip = "Exports the parts list from the open assembly to Excel.",
+                SuperTip = "An Excel sheet containing the parts list of the open assembly will be saved in the project directory."
             };
+
             exportPartsListButton.Click += (control) =>
             {
                 try
                 {
-                    var document = application.ActiveDocument;
-                    if (document is SeAssembly assembly) ExportPartsListCommand.Execute(assembly);
-                    else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
+                    SeDocument document = application.ActiveDocument;
+                    if (document is SeAssembly assembly)
+                    {
+                        ExportPartsListCommand.Execute(assembly);
+                    }
+                    else
+                    { 
+                        MessageBox.Show("Makro nie zadziała dla tego dokumentu");
+                    }
                 }
-                catch (Exception ex) { MessageBox.Show(ex.Message); }
+                catch (Exception ex) 
+                { 
+                    MessageBox.Show(ex.Message); 
+                }
             };
+
             assemblyGroup1.AddControl(exportPartsListButton);
 
-            var setCountPropertyButton = new RibbonButton(6)
+            /*- _____6_____ -*/
+            RibbonButton setCountPropertyButton = new (6)
             {
-                Label = "Dodaj właściwość ilości",
-                ScreenTip = "Dodaje nową właściwość (ilość) dla każdego wystąpienia z typem A,B,C",
-                SuperTip = "Dodane zostaną właściwości (ilości) dla wszystkich wystąpień w otwartym złożeniu"
+                Label = "Set Count Property",
+                ScreenTip = "Adds a new property (count) for each instance with type A,B,C.",
+                SuperTip = "Added properties (counts) will be available for all instances in the open assembly."
             };
+
             setCountPropertyButton.Click += (control) =>
             {
                 try
                 {
-                    var document = application.ActiveDocument;
-                    if (document is SeAssembly assembly) SetCountPropertyCommand.Execute(assembly);
-                    else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
+                    SeDocument document = application.ActiveDocument;
+                    if (document is SeAssembly assembly)
+                    { 
+                        SetCountPropertyCommand.Execute(assembly);
+                    }
+                    else
+                    { 
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
                 }
-                catch (Exception ex) { MessageBox.Show(ex.Message); }
+                catch (Exception ex) 
+                { 
+                    MessageBox.Show(ex.Message); 
+                }
             };
+
             assemblyGroup2.AddControl(setCountPropertyButton);
 
-            var copyDrawingsButton = new RibbonButton(7)
+            /*- _____7_____ -*/
+            RibbonButton copyDrawingsButton = new (7)
             {
-                Label = "Dodaj rysunki",
-                ScreenTip = "Dodaje folder Rysunki ",
-                SuperTip = "Dodane zostaną rysunki na podstawie pliku Excel w folderze Paczki"
+                Label = "Copy Drawings",
+                ScreenTip = "Copies drawings to the choosen directory.",
+                SuperTip = "Copied drawings will be placed in the chosen directory and added column in excel report."
             };
+
             copyDrawingsButton.Click += (control) =>
             {
                 try
                 {
-                    var document = application.ActiveDocument;
+                    SeDocument document = application.ActiveDocument;
                     CopyDrawingsCommand.Execute(document);
                 }
-                catch (Exception ex) { MessageBox.Show(ex.Message); }
+                catch (Exception ex) 
+                { 
+                    MessageBox.Show(ex.Message);
+                }
             };
+
             generalGroup.AddControl(copyDrawingsButton);
 
-            var clearDxfDateButton = new RibbonButton(8)
+            /*- _____8_____ -*/
+            RibbonButton clearDxfDateButton = new (8)
             {
-                Label = "Usuń właściwość DxfDate",
-                ScreenTip = "Usuwa właściwość DxfDate dla plików w tym złożeniu",
-                SuperTip = "Można użyć tego przed eksportem DXF"
+                Label = "Clear DxfDate Property",
+                ScreenTip = "Removes the DxfDate property for files in the current assembly.",
+                SuperTip = "This can be used before exporting to DXF."
             };
+
             clearDxfDateButton.Click += (control) =>
             {
                 try
                 {
-                    var document = application.ActiveDocument;
-                    if (document is SeAssembly assembly) ClearDxfDateCommand.Execute(assembly);
-                    else MessageBox.Show("Makro nie zadziała dla tego dokumentu");
+                    SeDocument document = application.ActiveDocument;
+                    if (document is SeAssembly assembly)
+                    {                   
+                        ClearDxfDateCommand.Execute(assembly);
+                    }
+                    else
+                    {
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
                 }
-                catch (Exception ex) { MessageBox.Show(ex.Message); }
+                catch (Exception ex)
+                { 
+                    MessageBox.Show(ex.Message); 
+                }
             };
+
             assemblyGroup2.AddControl(clearDxfDateButton);
+
+            /*- _____9_____ -*/
+            RibbonButton organizeDrawingsButton = new(9)
+            {
+                Label = "Organize Drawings",
+                ScreenTip = "Organizes drawings in the project directory.",
+                SuperTip = "Organizes drawings (files .dxf and .pdf) in the project directory."
+            };
+
+            organizeDrawingsButton.Click += (control) =>
+            {
+                try
+                {
+                    MessageBox.Show("not implemented yet.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            };
+
+            assemblyGroup2.AddControl(organizeDrawingsButton);
+
+            /*- _____10_____ -*/
+            RibbonButton generateShotsButton = new(10)
+            {
+                Label = "Generate Shots",
+                ScreenTip = "Generates shots of all parts in the assembly",
+                SuperTip = "Generates shots of all parts in the assembly and lock them in the Miniatury directory."
+            };
+
+            generateShotsButton.Click += (control) =>
+            {
+                try
+                {
+                    MessageBox.Show("not implemented yet.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            };
+
+            assemblyGroup2.AddControl(generateShotsButton);
+
+            /*- _____11_____ -*/
+            RibbonButton transformDataButton = new(11)
+            {
+                Label = "Transform Data",
+                ScreenTip = "Transforms data from Excel.",
+                SuperTip = "Transforms data from Excel."
+            };
+
+            transformDataButton.Click += (control) =>
+            {
+                try
+                {
+                    MessageBox.Show("not implemented yet.");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            }; 
+
+            generalGroup.AddControl(transformDataButton);
         }
     }
 }

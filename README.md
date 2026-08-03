@@ -1,39 +1,30 @@
 # Solid Edge Manufacturing Automation Add-In
 
 ## Overview
-This is a custom Add-In for Siemens Solid Edge, developed in C# and the .NET Framework. It automates repetitive tasks related to manufacturing preparation, drawing exports, and Bill of Materials (BOM) generation. 
+This is a custom tool made for Siemens Solid Edge[cite: 61]. Its main job is to automate boring and repetitive tasks related to preparing files for manufacturing, exporting drawings, and creating parts lists (BOMs). 
 
-The goal of this tool is to speed up the export of production files and generate Excel reports directly from 3D CAD assemblies while reducing manual errors.
+The goal is simple: help you export production files much faster, create Excel reports directly from your 3D models, and avoid manual mistakes.
 
-## Technical Details
-This application was built with a strong focus on memory safety and execution speed when interacting with Solid Edge and Excel COM interfaces:
+## How It Works (The Benefits)
+This application is designed to be fast, reliable, and invisible to the user:
+*   **Computer Friendly:** It cleanly opens and closes Solid Edge and Excel in the background so it won't freeze your computer or leave hidden processes running.
+*   **Super Fast Excel:** Instead of writing data cell by cell, it builds the entire report in memory and pastes it into Excel all at once, making it incredibly fast.
+*   **Smart Exporting:** Before creating new DXF or PDF files, it checks if they already exist and are up to date. Skipping files you don't need to overwrite saves a massive amount of time during bulk exports.
 
-*   **COM Memory Management:** Solid Edge and Excel APIs are prone to leaving background processes running if objects are not handled correctly. This codebase wraps COM object calls in `try-finally` blocks and explicitly releases every instance using `Marshal.ReleaseComObject` to prevent memory leaks.
-*   **Bulk Excel Operations:** To avoid the performance bottleneck of cell-by-cell manipulation, the Add-In reads and writes spreadsheet data in bulk using 2D object arrays (`object[,]`). 
-*   **Export Optimization:** Before invoking the Solid Edge API to generate DXFs or PDFs, the Add-In checks the local directory and reads custom CAD properties (like DXF generation dates). It skips files that are already up to date, which significantly reduces batch export times.
-
-## Features & Commands
-The Add-In adds a custom Ribbon UI to Solid Edge (available in Assembly, Part, Sheet Metal, and Draft environments) with the following commands:
+## What Can It Do? (Features)
+The tool adds a new menu inside Solid Edge with the following easy-to-use buttons:
 
 **Drafting & Formats**
-*   **Save PDF & DXF:** Saves the active Draft document as both a PDF and a DXF in the source directory.
-*   **Save Flat Pattern:** Extracts the sheet metal flat pattern and saves it as a DXF.
-*   **Save STEP:** Exports the active part or sheet metal model to the STEP format.
+*   **Save PDF & DXF:** Instantly saves your current drawing as both a PDF and a DXF in your project folder.
+*   **Save Flat Pattern:** Takes a sheet metal part and exports its flat shape directly to a DXF file.
+*   **Save STEP:** Exports the 3D model you are currently looking at into a universal STEP file.
 
-**Assembly & BOM Automation**
-*   **Export DXFs (Batch):** Traverses the active assembly tree, identifies sheet metal components, generates missing DXF flat patterns, and outputs a formatted Excel BOM.
-*   **Export Parts List (Thumbnails):** Opens a background Draft environment to extract the BOM to Excel, generating and embedding thumbnail images of the 3D models into the spreadsheet.
-*   **Set Count Property:** Recursively calculates and updates custom quantity properties across specific component types based on a user-defined multiplier.
-*   **Clear DXF Date:** Clears generation dates from component metadata to force a clean re-export of specific files.
+**Assembly & Parts Lists Automation**
+*   **Export DXFs (Batch):** It looks through your entire assembly, finds all the sheet metal parts, creates DXF files for them, and puts everything into a neat Excel report.
+*   **Export Parts List:** Creates a complete list of parts in Excel and even takes small pictures (thumbnails) of your 3D models to put inside the spreadsheet.
+*   **Set Count Property:** Automatically counts how many times a part is used in the assembly and saves that exact number into the file's properties.
+*   **Clear DXF Date:** Erases the old creation dates from files, forcing the system to generate brand-new DXFs next time.
 
 **Manufacturing Preparation**
-*   **Add Drawings:** Reads a generated Excel BOM, locates the corresponding PDFs and DXFs in the project directory, and copies them into a dedicated production package folder.
-
-## Tech Stack
-*   **Language:** C#
-*   **Framework:** .NET Framework
-*   **APIs:** Solid Edge COM API, Microsoft Office Interop (Excel)
-
-## References
-*   **Solid Edge Community AddIn:** The foundation for registering COM Add-Ins is based on design patterns from the [SolidEdge.Community.AddIn](https://github.com/SolidEdgeCommunity/SolidEdge.Community.AddIn) repository.
-*   **Solid Edge .NET Programmer's Guide:** Used as the primary reference for interacting with the Solid Edge API.
+*   **Copy Drawings:** It reads your Excel parts list, searches your computer for the matching PDFs and DXFs, and copies them all into one dedicated package folder for the factory.
+*   **Organize Drawings:** Automatically sorts and cleans up your project folders by putting drawings into their proper places.

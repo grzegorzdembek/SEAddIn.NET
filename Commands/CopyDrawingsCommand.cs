@@ -1,4 +1,4 @@
-﻿using Helper = SolidEdgeAdd_In.Helpers.CopyDrawingsHelper;
+﻿using SolidEdgeAdd_In.Processors;
 
 namespace SolidEdgeAdd_In.Commands
 {
@@ -10,17 +10,21 @@ namespace SolidEdgeAdd_In.Commands
 
             try
             {
-                var defaultDir = Helper.GetDefaultDirectory(document); if (string.IsNullOrEmpty(defaultDir)) { MessageBox.Show("Nie znaleziono folderu Paczki", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+                var processor = new CopyDrawingsProcessor(document);
 
-                var selectedDir = Helper.GetSelectedDirectory(defaultDir); if (string.IsNullOrEmpty(selectedDir)) return;
+                if (processor.Initialize())
+                {
+                    processor.Process();
+                }
 
-                var excelSummary = Helper.GetExcelSummary(selectedDir); if (string.IsNullOrEmpty(excelSummary)) { MessageBox.Show("Brakuje zestawienia blach.", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-
-                Helper.ProcessCopyingDrawings(document, selectedDir, excelSummary);
-
-                stopwatch.Stop(); string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff"); MessageBox.Show($"Czas działania: {elapsedTime}", "Zakończono", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                stopwatch.Stop();
+                string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff");
+                MessageBox.Show($"Execution time: {elapsedTime}", "Completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Exception: {ex.Message}");
+            }
         }
     }
 }

@@ -1,11 +1,10 @@
-
 namespace SolidEdgeAdd_In.Ribbons
 {
     public abstract class Ribbon : IDisposable
     {
         private Guid _environmentCategory;
 
-        private readonly List<RibbonTab> _tabs = new List<RibbonTab>();
+        private readonly List<RibbonTab> _tabs = new ();
 
         public SolidEdgeFramework.Application Application { get; set; } 
 
@@ -29,11 +28,20 @@ namespace SolidEdgeAdd_In.Ribbons
 
         public Guid EnvironmentCategory
         {
-            get { return _environmentCategory; }
-            internal set { _environmentCategory = value; }
+            get 
+            { 
+                return _environmentCategory; 
+            }
+            internal set 
+            { 
+                _environmentCategory = value; 
+            }
         }
 
-        public virtual void OnControlClick(RibbonControl control) { }
+        public virtual void OnControlClick(RibbonControl control) 
+        {
+            
+        }
 
         public void Dispose()
         {
@@ -41,7 +49,10 @@ namespace SolidEdgeAdd_In.Ribbons
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void Dispose(bool disposing) { }
+        protected virtual void Dispose(bool disposing) 
+        {
+            
+        }
     }
 
     [Serializable]
@@ -62,9 +73,40 @@ namespace SolidEdgeAdd_In.Ribbons
         }
 
         public int CommandId => _commandId;
-        public string Label { get { return _label; } set { _label = value; } }
-        public string ScreenTip { get { return _screenTip; } set { _screenTip = value; } }
-        public string SuperTip { get { return _superTip; } set { _superTip = value; } }
+        public string Label 
+        { 
+            get 
+            { 
+                return _label; 
+            } 
+            set 
+            { 
+                _label = value; 
+            } 
+        }
+
+        public string ScreenTip 
+        { 
+            get 
+            { 
+                return _screenTip; 
+            } 
+            set 
+            { 
+                _screenTip = value; 
+            } 
+        }
+        public string SuperTip 
+        { 
+            get 
+            { 
+                return _superTip; 
+            } 
+            set 
+            { 
+                _superTip = value; 
+            } 
+        }
 
         internal virtual void DoClick()
         {
@@ -74,11 +116,21 @@ namespace SolidEdgeAdd_In.Ribbons
 
     public class RibbonButton : RibbonControl
     {
-        public RibbonButton(int id) : base(id) { }
+        public RibbonButton(int id) : base(id) 
+        {
+            
+        }
 
-        public RibbonButtonSize Size { get; set; } = RibbonButtonSize.Normal;
-        public string DropDownGroup { get; set; }
-        public int ImageId { get; set; } = -1;
+        public RibbonButtonSize Size 
+        {   get; set; } = RibbonButtonSize.Normal;
+
+        public string DropDownGroup 
+        { 
+            get; 
+            set; 
+        }
+        public int ImageId 
+        { get; set; } = -1;
     }
 
     public class RibbonGroup
