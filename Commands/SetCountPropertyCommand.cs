@@ -14,26 +14,19 @@ namespace SolidEdgeAdd_In.Commands
                 application.DelayCompute = true;
                 application.ScreenUpdating = false;
 
-                var processor = new SetCountPropertyProcessor(assembly);
-
-                if (processor.Initialize())
-                {
-                    processor.Process();
-                }
+                SetCountPropertyProcessor processor = new (assembly);
+                if (processor.Initialize()) { processor.Process(); }
 
                 stopwatch.Stop();
                 string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff");
-                MessageBox.Show($"Execution time: {elapsedTime}", "Completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                MessageBox.Show($"Execution time: {elapsedTime}", 
+                    "Completed", 
+                    MessageBoxButtons.OK, 
+                    MessageBoxIcon.Information);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Exception: {ex.Message}");
-            }
-            finally
-            {
-                application.DelayCompute = false;
-                application.ScreenUpdating = true;
-            }
+            catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
+            finally { application.DelayCompute = false; application.ScreenUpdating = true; }
         }
     }
 }

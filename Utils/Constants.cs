@@ -1,9 +1,8 @@
-﻿using System.Security.Policy;
-
-namespace SolidEdgeAdd_In.Utils
+﻿namespace SolidEdgeAdd_In.Utils
 {
     public static class Constants
     {
+        // FOLDERS
         public static class Folders
         {
             public const string Packages = "Paczki";
@@ -11,6 +10,7 @@ namespace SolidEdgeAdd_In.Utils
             public const string Thumbnails = "Miniatury";
         }
 
+        // PROPERTIES
         public static class Properties
         {
             public const string CustomSet = "Custom";
@@ -22,7 +22,7 @@ namespace SolidEdgeAdd_In.Utils
             public const string Thickness = "Grubość materiału";
             public const string Material = "Material";
             public const string MaterialName = "material_nazwa";
-            public const string Quantity = "Ilość";
+            public const string Count = "Ilość";
             public const string DxfDate = "DXF";
             public const string SizeX = "Model_Rozwinięcia_RozmiarArkuszaX";
             public const string SizeY = "Model_Rozwinięcia_RozmiarArkuszaY";
@@ -34,6 +34,7 @@ namespace SolidEdgeAdd_In.Utils
             public const string Finish = "Finish";
         }
 
+        // TYPES
         public static class PartTypes
         {
             public const string Assembly = "A";
@@ -44,26 +45,27 @@ namespace SolidEdgeAdd_In.Utils
             public const string Standard = "N";
         }
 
+        // EXCEL HEADERS
         public static class ExcelHeaders
         {
             public const string Lp = "Lp";
-            public const string PartNumber = "Nr części";
-            public const string Number = "Numer części";
+            public const string FileName = "Numer części";
+            public const string Title = "Nazwa";
             public const string Drawings = "Rysunki";
             public const string Thickness = "Grubość";
-            public const string Width = "Szerokość [mm]";
-            public const string Length = "Długość [mm]";
+            public const string SizeX = "Szerokość [mm]";
+            public const string SizeY = "Długość [mm]";
             public const string Material = "Gatunek";
-            public const string Quantity = "Ilość";
+            public const string Count = "Ilość";
             public const string Type = "Typ";
             public const string Thumbnail = "Miniatura";
-            public const string Name = "Nazwa";
             public const string Flanges = "Gięcia";
             public const string Color = "Kolor";
             public const string Finish = "Wykończenie";
-            public const string Date = "Dxf";
+            public const string DxfDate = "Dxf";
         }
 
+        // STYLES
         public static class Styles
         {
             public const string Assembly = "Złożenie";

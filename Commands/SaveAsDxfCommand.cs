@@ -6,25 +6,22 @@ namespace SolidEdgeAdd_In.Commands
     {
         public static void Execute(SeDocument document)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
             try
             {
-                var processor = new SaveAsDxfProcessor(document);
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                if (processor.Initialize())
-                {
-                    processor.Process();
-                }
+                SaveFlatPatternAsDxfProcessor processor = new (document);
+                if (processor.Initialize()) { processor.Process(); }
 
                 stopwatch.Stop();
                 string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff");
-                MessageBox.Show($"Execution time: {elapsedTime}", "Completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                MessageBox.Show($"Execution time: {elapsedTime}", 
+                    "Completed", 
+                    MessageBoxButtons.OK, 
+                    MessageBoxIcon.Information);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Exception: {ex.Message}");
-            }
+            catch (Exception ex) { MessageBox.Show($"Exception: {ex.Message}"); }
         }
     }
 }

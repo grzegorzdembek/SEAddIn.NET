@@ -5,7 +5,7 @@ namespace SolidEdgeAdd_In.Processors
     public class SaveAsStepProcessor
     {
         private readonly SeDocument _document;
-        private string _path;
+        private string _stepFilePath;
 
         public SaveAsStepProcessor(SeDocument document)
         {
@@ -14,31 +14,32 @@ namespace SolidEdgeAdd_In.Processors
 
         public bool Initialize()
         {
-            if (string.IsNullOrEmpty(_document.FullName))
+            string documentFilePath = _document.FullName;
+
+            if (string.IsNullOrEmpty(documentFilePath))
             {
                 MessageBox.Show("Save the file in Solid Edge first to export STEP format.", "Save Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
-            using var properties = new PropertyProvider(_document);
-            string name = $"{properties.MaterialName}_{properties.Count}pcs_{properties.Material}_{Path.GetFileNameWithoutExtension(_document.FullName)}.step";
+            string fileName = Path.GetFileNameWithoutExtension(documentFilePath);
+            string projectDirectory = Path.GetDirectoryName(documentFilePath);
 
-            string initialPath = Path.Combine(Path.GetDirectoryName(_document.FullName), name);
+            using PropertyUtils properties = new(_document);
+            string stepFileName = $"{properties.MaterialName}_{properties.Count}szt_{properties.Material}_{fileName}.step";
+            string stepFilePath = Path.Combine(projectDirectory, stepFileName);
 
-            var result = DialogService.GetDecisionAndEditedStepPath(initialPath);
+            (bool isConfirmed, string editedPath) = DialogUtils.GetEditedPath(stepFilePath);
+            if (!isConfirmed || string.IsNullOrEmpty(editedPath)) { return false; }
 
-            if (!result.isConfirmed || string.IsNullOrEmpty(result.stepPath))
-            {
-                return false;
-            }
+            _stepFilePath = editedPath;
 
-            _path = result.stepPath;
             return true;
         }
 
         public void Process()
         {
-            _document.SaveAs(_path);
+            _document.SaveAs(_stepFilePath);
         }
     }
 }

@@ -5,112 +5,94 @@ namespace SolidEdgeAdd_In.Processors
     public class CopyDrawingsProcessor
     {
         private readonly SeDocument _document;
-        private string _projectDirectory;
-        private string _selectedDirectory;
-        private string _excelPath;
-        private string _drawingsDirectory;
+        private List<(string FileName, string Path)> _pdfFiles;
+        private List<(string FileName, string Path)> _dxfFiles;
 
-        private List<(string Name, string Path)> _pdfFiles;
-        private List<(string Name, string Path)> _dxfFiles;
+        private string _projectDirectory;
+        private string _packagesDirectory;
+        private string _excelFilePath;
+        private string _drawingsDirectory;
 
         public CopyDrawingsProcessor(SeDocument document)
         {
             _document = document;
-            _pdfFiles = new List<(string Name, string Path)>();
-            _dxfFiles = new List<(string Name, string Path)>();
+            _pdfFiles = new List<(string FileName, string Path)>();
+            _dxfFiles = new List<(string FileName, string Path)>();
         }
 
         public bool Initialize()
         {
-            if (_document == null || string.IsNullOrEmpty(_document.FullName))
-            {
-                return false;
-            }
+            if (_document == null || string.IsNullOrEmpty(_document.FullName)) { return false; }
 
             _projectDirectory = Path.GetDirectoryName(_document.FullName);
-            string packagesDirectory = Path.Combine(_projectDirectory, Constants.Folders.Packages);
+            string expectedPackagesDirectory = Path.Combine(_projectDirectory, Constants.Folders.Packages);
 
-            if (!Directory.Exists(packagesDirectory))
+            if (!Directory.Exists(expectedPackagesDirectory))
             {
                 MessageBox.Show("Packages folder not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
-            using (FolderBrowserDialog fbd = new FolderBrowserDialog
+            // DIALOG
+            FolderBrowserDialog fbd = new()
             {
                 Description = "Select the folder where you want to add the Drawings folder (containing the sheet metal summary):",
-                SelectedPath = packagesDirectory,
+                SelectedPath = expectedPackagesDirectory,
                 ShowNewFolderButton = false
-            })
-            {
-                if (fbd.ShowDialog() == DialogResult.OK)
-                {
-                    _selectedDirectory = fbd.SelectedPath;
-                }
-                else
-                {
-                    return false;
-                }
-            }
+            };
 
-            string[] excelFiles = Directory.GetFiles(_selectedDirectory, "*.xlsx");
+            if (fbd.ShowDialog() == DialogResult.OK) { _packagesDirectory = fbd.SelectedPath; }
+            else { return false; }
 
+            // VALIDATION
+            string[] excelFiles = Directory.GetFiles(_packagesDirectory, "*.xlsx");
             if (excelFiles.Length == 0 || excelFiles.Length > 1)
             {
                 MessageBox.Show("Missing or multiple sheet metal summaries found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
-            _excelPath = excelFiles[0];
-            _drawingsDirectory = Path.Combine(_selectedDirectory, Constants.Folders.Drawings);
+            _excelFilePath = excelFiles[0];
+            _drawingsDirectory = Path.Combine(_packagesDirectory, Constants.Folders.Drawings);
 
             _pdfFiles = Directory.GetFiles(_projectDirectory, "*.pdf", SearchOption.TopDirectoryOnly)
-                                 .Select(f => (Path.GetFileNameWithoutExtension(f), f))
-                                 .ToList();
+                                 .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
 
             _dxfFiles = Directory.GetFiles(_projectDirectory, "*.dxf", SearchOption.TopDirectoryOnly)
-                                 .Select(f => (Path.GetFileNameWithoutExtension(f), f))
-                                 .ToList();
+                                 .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
 
             return true;
         }
 
         public void Process()
         {
-            if (!Directory.Exists(_drawingsDirectory))
-            {
-                Directory.CreateDirectory(_drawingsDirectory);
-            }
+            if (!Directory.Exists(_drawingsDirectory)) { Directory.CreateDirectory(_drawingsDirectory); }
 
             ExcelApp excelApp = null;
             ExcelWorkbooks workbooks = null;
             ExcelWorkbook workbook = null;
             ExcelSheets sheets = null;
             ExcelWorksheet worksheet = null;
+
             ExcelRange usedRange = null;
             ExcelRange expandedRange = null;
             ExcelRange cells = null;
             ExcelRange columns = null;
             ExcelRange rows = null;
+
             ExcelRange headerCell = null;
             dynamic headerFont = null;
             dynamic headerInterior = null;
             dynamic expandedBorders = null;
+
             ExcelRange startCell = null;
             ExcelRange endCell = null;
 
             try
             {
-                excelApp = new ExcelApp
-                {
-                    Visible = false,
-                    DisplayAlerts = false,
-                    ScreenUpdating = false,
-                    EnableEvents = false
-                };
-
+                excelApp = new ExcelApp { Visible = false, DisplayAlerts = false, ScreenUpdating = false, EnableEvents = false };
                 workbooks = excelApp.Workbooks;
-                workbook = workbooks.Open(_excelPath, ReadOnly: false);
+                workbook = workbooks.Open(_excelFilePath, ReadOnly: false);
                 sheets = workbook.Sheets;
                 worksheet = (ExcelWorksheet)sheets[1];
 
@@ -119,9 +101,9 @@ namespace SolidEdgeAdd_In.Processors
                 rows = usedRange.Rows;
                 columns = usedRange.Columns;
 
-                int nameColIndex = ExcelWrapper.GetColumnNumber(usedRange, Constants.ExcelHeaders.PartNumber);
-
-                if (nameColIndex == 0)
+                // COLUMNS SETUP
+                int fileNameColumnIndex = ExcelUtils.GetColumnNumber(usedRange, Constants.ExcelHeaders.FileName);
+                if (fileNameColumnIndex == 0)
                 {
                     MessageBox.Show("Column not found in the Excel file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
@@ -129,93 +111,74 @@ namespace SolidEdgeAdd_In.Processors
 
                 int rowCount = rows.Count;
                 int colCount = columns.Count;
-                int drawingsColIndex = ExcelWrapper.GetColumnNumber(usedRange, Constants.ExcelHeaders.Drawings);
+                int drawingsColumnIndex = ExcelUtils.GetColumnNumber(usedRange, Constants.ExcelHeaders.Drawings);
                 bool isNewColumn = false;
 
-                if (drawingsColIndex == 0)
+                if (drawingsColumnIndex == 0)
                 {
-                    drawingsColIndex = colCount + 1;
+                    drawingsColumnIndex = colCount + 1;
                     isNewColumn = true;
                 }
 
                 try
                 {
                     startCell = (ExcelRange)cells[1, 1];
-                    endCell = (ExcelRange)cells[rowCount, drawingsColIndex];
+                    endCell = (ExcelRange)cells[rowCount, drawingsColumnIndex];
                     expandedRange = worksheet.Range[startCell, endCell];
                 }
-                finally
-                {
-                    CoreUtils.ReleaseCom(ref startCell);
-                    CoreUtils.ReleaseCom(ref endCell);
-                }
+                finally { Helpers.ReleaseCom(ref startCell); Helpers.ReleaseCom(ref endCell); }
 
+                // DATA PROCESSING
                 object[,] data = (object[,])expandedRange.Value2;
-                data[1, drawingsColIndex] = Constants.ExcelHeaders.Drawings;
+                data[1, drawingsColumnIndex] = Constants.ExcelHeaders.Drawings;
 
                 for (int i = 2; i <= rowCount; i++)
                 {
                     bool isPdfReady = false;
                     bool isDxfReady = false;
 
-                    if (data[i, nameColIndex] != null)
+                    if (data[i, fileNameColumnIndex] != null)
                     {
-                        string partName = data[i, nameColIndex].ToString().Trim();
+                        string fileName = data[i, fileNameColumnIndex].ToString().Trim();
 
-                        if (!string.IsNullOrEmpty(partName))
+                        if (!string.IsNullOrEmpty(fileName))
                         {
-                            string expectedPdfPath = Path.Combine(_drawingsDirectory, partName + ".pdf");
-                            string expectedDxfPath = Path.Combine(_drawingsDirectory, partName + ".dxf");
+                            string expectedPdfPath = Path.Combine(_drawingsDirectory, fileName + ".pdf");
+                            string expectedDxfPath = Path.Combine(_drawingsDirectory, fileName + ".dxf");
 
-                            if (File.Exists(expectedPdfPath))
-                            {
-                                isPdfReady = true;
-                            }
+                            // PDF
+                            if (File.Exists(expectedPdfPath)) { isPdfReady = true; }
                             else
                             {
-                                var matchingPdfs = _pdfFiles.Where(f => f.Name.Equals(partName, StringComparison.OrdinalIgnoreCase)).ToList();
-                                foreach (var pdf in matchingPdfs)
-                                {
-                                    File.Copy(pdf.Path, expectedPdfPath, true);
-                                    isPdfReady = true;
-                                }
+                                var matchingPdfs = _pdfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)).ToList();
+                                foreach (var pdf in matchingPdfs) { File.Copy(pdf.Path, expectedPdfPath, true); isPdfReady = true; }
                             }
 
-                            if (File.Exists(expectedDxfPath))
-                            {
-                                isDxfReady = true;
-                            }
+                            // DXF
+                            if (File.Exists(expectedDxfPath)) { isDxfReady = true; }
                             else
-                            {                  
-                                var matchingDxfs = _dxfFiles.Where(f => f.Name.Equals(partName, StringComparison.OrdinalIgnoreCase)).ToList();
-                                foreach (var dxf in matchingDxfs)
-                                {
-                                    File.Copy(dxf.Path, expectedDxfPath, true);
-                                    isDxfReady = true;
-                                }
+                            {
+                                var matchingDxfs = _dxfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)).ToList();
+                                foreach (var dxf in matchingDxfs) { File.Copy(dxf.Path, expectedDxfPath, true); isDxfReady = true; }
                             }
                         }
                     }
 
-                    if (isDxfReady && isPdfReady)
-                    {
-                        data[i, drawingsColIndex] = "Copied";
-                    }
-                    else
-                    {
-                        data[i, drawingsColIndex] = "-";
-                    }
+                    if (isDxfReady && isPdfReady) { data[i, drawingsColumnIndex] = "Skopiowano"; }
+                    else { data[i, drawingsColumnIndex] = "-"; }
                 }
 
                 expandedRange.Value2 = data;
 
+                // FORMATTING
                 if (isNewColumn)
                 {
-                    headerCell = (ExcelRange)cells[1, drawingsColIndex];
+                    headerCell = (ExcelRange)cells[1, drawingsColumnIndex];
                     headerFont = headerCell.Font;
                     headerFont.Bold = true;
                     headerInterior = headerCell.Interior;
                     headerInterior.Color = ColorTranslator.ToOle(Color.LightGray);
+
                     expandedRange.HorizontalAlignment = Microsoft.Office.Interop.Excel.XlHAlign.xlHAlignCenter;
                     expandedBorders = expandedRange.Borders;
                     expandedBorders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
@@ -226,31 +189,18 @@ namespace SolidEdgeAdd_In.Processors
             }
             finally
             {
-                CoreUtils.ReleaseCom(ref expandedBorders);
-                CoreUtils.ReleaseCom(ref headerInterior);
-                CoreUtils.ReleaseCom(ref headerFont);
-                CoreUtils.ReleaseCom(ref headerCell);
-                CoreUtils.ReleaseCom(ref rows);
-                CoreUtils.ReleaseCom(ref columns);
-                CoreUtils.ReleaseCom(ref cells);
-                CoreUtils.ReleaseCom(ref expandedRange);
-                CoreUtils.ReleaseCom(ref usedRange);
-                CoreUtils.ReleaseCom(ref worksheet);
-                CoreUtils.ReleaseCom(ref sheets);
+                Helpers.ReleaseCom(ref expandedBorders); Helpers.ReleaseCom(ref headerInterior);
+                Helpers.ReleaseCom(ref headerFont); Helpers.ReleaseCom(ref headerCell);
+                Helpers.ReleaseCom(ref rows); Helpers.ReleaseCom(ref columns);
+                Helpers.ReleaseCom(ref cells); Helpers.ReleaseCom(ref expandedRange);
+                Helpers.ReleaseCom(ref usedRange); Helpers.ReleaseCom(ref worksheet);
+                Helpers.ReleaseCom(ref sheets);
 
-                if (workbook != null)
-                {
-                    try { workbook.Close(false); } catch { }
-                }
+                if (workbook != null) { try { workbook.Close(false); } catch { } }
+                Helpers.ReleaseCom(ref workbook); Helpers.ReleaseCom(ref workbooks);
 
-                CoreUtils.ReleaseCom(ref workbook);
-                CoreUtils.ReleaseCom(ref workbooks);
-
-                if (excelApp != null)
-                {
-                    try { excelApp.Quit(); } catch { }
-                }
-                CoreUtils.ReleaseCom(ref excelApp);
+                if (excelApp != null) { try { excelApp.Quit(); } catch { } }
+                Helpers.ReleaseCom(ref excelApp);
             }
         }
     }

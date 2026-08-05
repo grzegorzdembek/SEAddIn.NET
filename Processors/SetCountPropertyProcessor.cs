@@ -5,9 +5,10 @@ namespace SolidEdgeAdd_In.Processors
     public class SetCountPropertyProcessor
     {
         private readonly SeAssembly _assembly;
+        private readonly Dictionary<string, FileData> _data;
+        private readonly StringBuilder _feedback;
+
         private int _multiplier;
-        private Dictionary<string, FileData> _data;
-        private StringBuilder _feedback;
 
         public SetCountPropertyProcessor(SeAssembly assembly)
         {
@@ -19,38 +20,23 @@ namespace SolidEdgeAdd_In.Processors
         public bool Initialize()
         {
             SeDocument document = (SeDocument)_assembly;
-            using var properties = new PropertyProvider(document);
 
+            using var properties = new PropertyUtils(document);
             int count = properties.Count;
 
+            // MULTIPLIER
             if (count == 0)
             {
-                var result = DialogService.GetMultiplier();
-                if (result.isConfirmed)
-                {
-                    properties.Count = result.multiplier;
-                    _multiplier = result.multiplier;
-                }
-                else
-                {
-                    return false;
-                }
+                var (isConfirmed, multiplier) = DialogUtils.GetMultiplier();
+                if (isConfirmed) { properties.Count = multiplier; _multiplier = multiplier; }
+                else { return false; }
             }
-            else
-            {
-                _multiplier = count;
-            }
+            else { _multiplier = count; }
 
+            // SCAN DATA
             SeOccurrences occurrences = null;
-            try
-            {
-                occurrences = _assembly.Occurrences;
-                AssemblyTreeWalker.BuildDataForSetCount(occurrences, _data);
-            }
-            finally
-            {
-                CoreUtils.ReleaseCom(ref occurrences);
-            }
+            try { occurrences = _assembly.Occurrences; DataUtils.BuildDataForSetCount(occurrences, _data); }
+            finally { Helpers.ReleaseCom(ref occurrences); }
 
             return true;
         }
@@ -62,87 +48,60 @@ namespace SolidEdgeAdd_In.Processors
 
             string M = _multiplier.ToString("D3");
             int missFiles = 0;
-            int missTypes = 0;
 
-            HashSet<string> processed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> processedPaths = new(StringComparer.OrdinalIgnoreCase);
             SeOccurrences occurrences = null;
 
-            try
-            {
-                occurrences = _assembly.Occurrences;
-                AssemblyTreeWalker.ApplyCounts(occurrences, _data, _multiplier, processed);
-            }
-            finally
-            {
-                CoreUtils.ReleaseCom(ref occurrences);
-            }
+            // APPLY COUNTS
+            try { occurrences = _assembly.Occurrences; DataUtils.ApplyCounts(occurrences, _data, _multiplier, processedPaths); }
+            finally { Helpers.ReleaseCom(ref occurrences); }
 
+            // REPORTING
             foreach (var item in _data)
             {
                 try
                 {
                     string type = item.Value.Type;
+                    string fileName = item.Value.FileName;
 
-                    if (type == null)
+                    int count = item.Value.OccurrenceCount;
+                    int oldCount = item.Value.Count;
+                    int targetCount = _multiplier * count;
+
+                    if (!processedPaths.Contains(item.Key))
                     {
-                        missTypes++;
+                        missFiles++;
+                        _feedback.AppendLine($"{fileName,-30} | {type} | --- | --- | --- | --- |");
                         continue;
                     }
 
-                    if (type == Constants.PartTypes.Assembly || type == Constants.PartTypes.SheetMetal || type == Constants.PartTypes.Part || type == Constants.PartTypes.Steelmaking)
-                    {
-                        string name = item.Value.Name;
-                        int count = item.Value.OccurrenceCount;
-                        int oldCount = item.Value.Count;
-                        int targetCount = _multiplier * count;
+                    string I = oldCount.ToString("D3");
+                    string C = count.ToString("D3");
+                    string MC = targetCount.ToString("D3");
 
-                        if (!processed.Contains(item.Key))
-                        {
-                            missFiles++;
-                            _feedback.AppendLine($"{name,-30} | {type} | --- | --- | --- | --- |");
-                            continue;
-                        }
-
-                        string I = oldCount.ToString("D3");
-                        string C = count.ToString("D3");
-                        string MC = targetCount.ToString("D3");
-
-                        _feedback.AppendLine($"{name,-30} | {type} | {M} | {I} | {C} | {MC} |");
-                    }
+                    _feedback.AppendLine($"{fileName,-30} | {type} | {M} | {I} | {C} | {MC} |");
                 }
                 catch
                 {
                     missFiles++;
-                    string errorName = "Unknown file";
-                    try
-                    {
-                        errorName = item.Value.Name ?? Path.GetFileNameWithoutExtension(item.Key);
-                    }
-                    catch
-                    {
-                    }
-                    _feedback.AppendLine($"{errorName,-30} | --- | --- | --- | --- | --- | --- |");
+                    string errorFileName = "Unknown file";
+                    try { errorFileName = item.Value.FileName ?? Path.GetFileNameWithoutExtension(item.Key); } catch { }
+                    _feedback.AppendLine($"{errorFileName,-30} | --- | --- | --- | --- | --- | --- |");
                     continue;
                 }
             }
 
-            _feedback.AppendLine($"Number of files without Type property: {missTypes}");
-
-            if (missFiles == 0)
-            {
-                _feedback.AppendLine($"Successfully added property - Quantity for all files.");
-            }
-            else
-            {
-                _feedback.AppendLine($"Skipped {missFiles} files.");
-            }
+            // SUMMARY
+            if (missFiles == 0) { _feedback.AppendLine($"Successfully added property - Quantity for all files."); }
+            else { _feedback.AppendLine($"Skipped {missFiles} files."); }
 
             DisplayFeedback();
         }
 
+        // DIALOG WINDOW
         private void DisplayFeedback()
         {
-            using Form form = new Form
+            using Form form = new()
             {
                 Text = "Feedback",
                 Width = 700,
@@ -150,7 +109,7 @@ namespace SolidEdgeAdd_In.Processors
                 StartPosition = FormStartPosition.CenterScreen
             };
 
-            TextBox textBox = new TextBox
+            TextBox textBox = new()
             {
                 Multiline = true,
                 ReadOnly = true,

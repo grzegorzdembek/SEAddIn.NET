@@ -260,7 +260,16 @@ namespace SolidEdgeAdd_In.Ribbons
             {
                 try
                 {
-                    MessageBox.Show("not implemented yet.");
+                    SeDocument document = application.ActiveDocument;
+                    if (document is SeAssembly assembly)
+                    {
+                        OrganiseDrawingsCommand.Execute(assembly);
+                    }
+                    else
+                    {
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
+
                 }
                 catch (Exception ex)
                 {
@@ -293,18 +302,26 @@ namespace SolidEdgeAdd_In.Ribbons
             assemblyGroup2.AddControl(generateShotsButton);
 
             /*- _____11_____ -*/
-            RibbonButton transformDataButton = new(11)
+            RibbonButton exportOccurrencelListButton = new(11)
             {
-                Label = "Transform Data",
-                ScreenTip = "Transforms data from Excel.",
-                SuperTip = "Transforms data from Excel."
+                Label = "Export Occurrence List",
+                ScreenTip = "Exports the occurrence list for the active assembly.",
+                SuperTip = "Choose the occurrence type and export them to the Excel."
             };
 
-            transformDataButton.Click += (control) =>
+            exportOccurrencelListButton.Click += (control) =>
             {
                 try
                 {
-                    MessageBox.Show("not implemented yet.");
+                    SeDocument document = application.ActiveDocument;
+                    if (document is SeAssembly assembly)
+                    {
+                        //ExportOccurrenceListCommand.Execute(assembly);
+                    }
+                    else
+                    {
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -312,7 +329,7 @@ namespace SolidEdgeAdd_In.Ribbons
                 }
             }; 
 
-            generalGroup.AddControl(transformDataButton);
+            //generalGroup.AddControl(transformDataButton);
         }
     }
 }
