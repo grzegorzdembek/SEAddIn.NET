@@ -8,22 +8,22 @@ namespace SolidEdgeAdd_In.Ribbons
         {
             this.Application = application;
 
-            RibbonTab tab = AddTab("AddIns");
+            RibbonTab tab = AddTab("AddIn");
 
-            RibbonGroup draftGroup = tab.AddGroup("Draft Environment");
-            RibbonGroup partGroup = tab.AddGroup("Part Environment");
-            RibbonGroup assemblyGroup1 = tab.AddGroup("Assembly Environment");
-            RibbonGroup assemblyGroup2 = tab.AddGroup("Assembly Environment");
-            RibbonGroup generalGroup = tab.AddGroup("General");
+            RibbonGroup draftGroup = tab.AddGroup("Draft Environment"); // 1 Command 
+            RibbonGroup partGroup = tab.AddGroup("Part Environment"); // 2 Command
+            RibbonGroup assemblyGroup1 = tab.AddGroup("Assembly Environment"); // 3 Command
+            RibbonGroup assemblyGroup2 = tab.AddGroup("Assembly Environment"); // 3 Command
+            RibbonGroup generalGroup = tab.AddGroup("General"); // 1 Command
 
-            /*- _____1_____ -*/
+            /**************************************************************/
+            /*- _____1_____DRAFT_______ -*/
             RibbonButton saveDraftButton = new (1)
             {
                 Label = "Save PDF and DXF",
                 ScreenTip = "Saves the active drawing as PDF and DXF.",
                 SuperTip = "The drawing will be saved as both PDF and DXF in the project directory."
             };
-
             saveDraftButton.Click += (control) =>
             {
                 try
@@ -43,41 +43,10 @@ namespace SolidEdgeAdd_In.Ribbons
                     MessageBox.Show(ex.Message); 
                 }
             };
-
             draftGroup.AddControl(saveDraftButton);
 
-            /*- _____2_____ -*/
-            RibbonButton saveFlatPatternButton = new (2)
-            {
-                Label = "Save Flat Pattern",
-                ScreenTip = "Saves the flat pattern as a DXF.",
-                SuperTip = "The flat pattern will be saved as a DXF in the project directory."
-            };
-
-            saveFlatPatternButton.Click += (control) =>
-            {
-                try
-                {
-                    SeDocument document = application.ActiveDocument;
-                    if (document is SePart partDocument || document is SeSheetMetal sheetMetalDocument)
-                    {
-                        SaveAsDxfCommand.Execute(document);
-                    }
-                    else
-                    { 
-                        MessageBox.Show("AddIn will not execute for this document.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message); 
-                }
-            };
-
-            partGroup.AddControl(saveFlatPatternButton);
-
-            /*- _____3_____ -*/
-            RibbonButton saveStepButton = new (3)
+            /*- _____2_____PART/SheetMetal_______ -*/
+            RibbonButton saveStepButton = new(2)
             {
                 Label = "Save STEP",
                 ScreenTip = "Saves the active document as a STEP file.",
@@ -98,22 +67,56 @@ namespace SolidEdgeAdd_In.Ribbons
                         MessageBox.Show("AddIn will not execute for this document.");
                     }
                 }
-                catch (Exception ex) 
-                { 
-                    MessageBox.Show(ex.Message); 
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
                 }
             };
 
             partGroup.AddControl(saveStepButton);
 
-            /*- _____4_____ -*/
+            /*- _____3_____PART/SHEETMETAL_______ -*/
+            RibbonButton saveFlatPatternButton = new (3)
+            {
+                Label = "Save Flat Pattern",
+                ScreenTip = "Saves the flat pattern as a DXF.",
+                SuperTip = "The flat pattern will be saved as a DXF in the project directory."
+            };
+
+            saveFlatPatternButton.Click += (control) =>
+            {
+                try
+                {
+                    SeDocument document = application.ActiveDocument;
+                    if (document is SePart partDocument || document is SeSheetMetal sheetMetalDocument)
+                    {
+                        SaveFlatPatternAsDxfCommand.Execute(document);
+                    }
+                    else
+                    { 
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message); 
+                }
+            };
+            partGroup.AddControl(saveFlatPatternButton);
+            /**************************************************************/
+
+
+
+
+
+            /**************************************************************/
+            /*- _____4_____ASSEMBLY_______ -*/
             RibbonButton exportDxfsButton = new (4)
             {
                 Label = "Export DXFs",
                 ScreenTip = "Exports DXFs of all flat patterns for files - (.par) and (.psm) from the open assembly.",
                 SuperTip = "The DXFs of all flat patterns for files - (par) and (psm) from the open assembly will be exported with excel report."
             };
-
             exportDxfsButton.Click += (control) =>
             {
                 try
@@ -135,14 +138,13 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             assemblyGroup1.AddControl(exportDxfsButton);
 
-            /*- _____5_____ -*/
+            /*- _____5_____ASSEMBLY_______ -*/
             RibbonButton exportPartsListButton = new (5)
             {
                 Label = "Export Parts List",
                 ScreenTip = "Exports the parts list from the open assembly to Excel.",
                 SuperTip = "An Excel sheet containing the parts list of the open assembly will be saved in the project directory."
             };
-
             exportPartsListButton.Click += (control) =>
             {
                 try
@@ -154,7 +156,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     { 
-                        MessageBox.Show("Makro nie zadziała dla tego dokumentu");
+                        MessageBox.Show("AddIn will not execute for this document.");
                     }
                 }
                 catch (Exception ex) 
@@ -162,17 +164,49 @@ namespace SolidEdgeAdd_In.Ribbons
                     MessageBox.Show(ex.Message); 
                 }
             };
-
             assemblyGroup1.AddControl(exportPartsListButton);
 
-            /*- _____6_____ -*/
-            RibbonButton setCountPropertyButton = new (6)
+            /*- _____6_____ASSEMBLY_______ -*/
+            RibbonButton exportOccurrencelListButton = new(6)
+            {
+                Label = "Export Occurrence List",
+                ScreenTip = "Exports the occurrence list for the active assembly.",
+                SuperTip = "Select the occurrence type and export them to the Excel."
+            };
+            exportOccurrencelListButton.Click += (control) =>
+            {
+                try
+                {
+                    SeDocument document = application.ActiveDocument;
+                    if (document is SeAssembly assembly)
+                    {
+                        ExportOccurrencesListCommand.Execute(assembly);
+                    }
+                    else
+                    {
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            };
+            assemblyGroup2.AddControl(exportOccurrencelListButton);
+            /**************************************************************/
+
+
+
+
+
+            /**************************************************************/
+            /*- _____7_____ASSEMBLY_______ -*/
+            RibbonButton setCountPropertyButton = new (7)
             {
                 Label = "Set Count Property",
                 ScreenTip = "Adds a new property (count) for each instance with type A,B,C.",
                 SuperTip = "Added properties (counts) will be available for all instances in the open assembly."
             };
-
             setCountPropertyButton.Click += (control) =>
             {
                 try
@@ -192,17 +226,48 @@ namespace SolidEdgeAdd_In.Ribbons
                     MessageBox.Show(ex.Message); 
                 }
             };
+            assemblyGroup1.AddControl(setCountPropertyButton);
 
-            assemblyGroup2.AddControl(setCountPropertyButton);
+            /*- _____8_____ASSEMBLY_______ -*/
+            RibbonButton clearDxfDateButton = new(8)
+            {
+                Label = "Clear DxfDate Property",
+                ScreenTip = "Removes the DxfDate property for files in the current assembly.",
+                SuperTip = "This can be used before exporting to DXF."
+            };
+            clearDxfDateButton.Click += (control) =>
+            {
+                try
+                {
+                    SeDocument document = application.ActiveDocument;
+                    if (document is SeAssembly assembly)
+                    {
+                        ClearDxfDateCommand.Execute(assembly);
+                    }
+                    else
+                    {
+                        MessageBox.Show("AddIn will not execute for this document.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            };
+            assemblyGroup2.AddControl(clearDxfDateButton);
+            /**************************************************************/
 
-            /*- _____7_____ -*/
-            RibbonButton copyDrawingsButton = new (7)
+
+
+
+            /**************************************************************/
+            /*- _____9_____GENERAL_______ -*/
+            RibbonButton copyDrawingsButton = new (9)
             {
                 Label = "Copy Drawings",
-                ScreenTip = "Copies drawings to the choosen directory.",
+                ScreenTip = "Copies drawings to the selected directory.",
                 SuperTip = "Copied drawings will be placed in the chosen directory and added column in excel report."
             };
-
             copyDrawingsButton.Click += (control) =>
             {
                 try
@@ -215,47 +280,15 @@ namespace SolidEdgeAdd_In.Ribbons
                     MessageBox.Show(ex.Message);
                 }
             };
-
             generalGroup.AddControl(copyDrawingsButton);
-
-            /*- _____8_____ -*/
-            RibbonButton clearDxfDateButton = new (8)
-            {
-                Label = "Clear DxfDate Property",
-                ScreenTip = "Removes the DxfDate property for files in the current assembly.",
-                SuperTip = "This can be used before exporting to DXF."
-            };
-
-            clearDxfDateButton.Click += (control) =>
-            {
-                try
-                {
-                    SeDocument document = application.ActiveDocument;
-                    if (document is SeAssembly assembly)
-                    {                   
-                        ClearDxfDateCommand.Execute(assembly);
-                    }
-                    else
-                    {
-                        MessageBox.Show("AddIn will not execute for this document.");
-                    }
-                }
-                catch (Exception ex)
-                { 
-                    MessageBox.Show(ex.Message); 
-                }
-            };
-
-            assemblyGroup2.AddControl(clearDxfDateButton);
-
-            /*- _____9_____ -*/
-            RibbonButton organizeDrawingsButton = new(9)
+        
+            /*- _____10_____ASSEMBLY_______ -*/
+            RibbonButton organizeDrawingsButton = new(10)
             {
                 Label = "Organize Drawings",
                 ScreenTip = "Organizes drawings in the project directory.",
                 SuperTip = "Organizes drawings (files .dxf and .pdf) in the project directory."
             };
-
             organizeDrawingsButton.Click += (control) =>
             {
                 try
@@ -276,60 +309,8 @@ namespace SolidEdgeAdd_In.Ribbons
                     MessageBox.Show(ex.Message);
                 }
             };
-
             assemblyGroup2.AddControl(organizeDrawingsButton);
-
-            /*- _____10_____ -*/
-            RibbonButton generateShotsButton = new(10)
-            {
-                Label = "Generate Shots",
-                ScreenTip = "Generates shots of all parts in the assembly",
-                SuperTip = "Generates shots of all parts in the assembly and lock them in the Miniatury directory."
-            };
-
-            generateShotsButton.Click += (control) =>
-            {
-                try
-                {
-                    MessageBox.Show("not implemented yet.");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
-            };
-
-            assemblyGroup2.AddControl(generateShotsButton);
-
-            /*- _____11_____ -*/
-            RibbonButton exportOccurrencelListButton = new(11)
-            {
-                Label = "Export Occurrence List",
-                ScreenTip = "Exports the occurrence list for the active assembly.",
-                SuperTip = "Choose the occurrence type and export them to the Excel."
-            };
-
-            exportOccurrencelListButton.Click += (control) =>
-            {
-                try
-                {
-                    SeDocument document = application.ActiveDocument;
-                    if (document is SeAssembly assembly)
-                    {
-                        //ExportOccurrenceListCommand.Execute(assembly);
-                    }
-                    else
-                    {
-                        MessageBox.Show("AddIn will not execute for this document.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
-            }; 
-
-            //generalGroup.AddControl(transformDataButton);
+            /**************************************************************/
         }
     }
 }

@@ -15,7 +15,6 @@ namespace SolidEdgeAdd_In.Processors
         {
             HashSet<string> processedPaths = new(StringComparer.OrdinalIgnoreCase);
             SeOccurrences occurrences = null;
-
             try
             {
                 occurrences = _assembly.Occurrences;

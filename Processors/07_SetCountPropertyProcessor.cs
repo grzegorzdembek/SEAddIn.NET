@@ -5,10 +5,13 @@ namespace SolidEdgeAdd_In.Processors
     public class SetCountPropertyProcessor
     {
         private readonly SeAssembly _assembly;
+
         private readonly Dictionary<string, FileData> _data;
-        private readonly StringBuilder _feedback;
+        private int _dataCount;
 
         private int _multiplier;
+
+        private readonly StringBuilder _feedback;
 
         public SetCountPropertyProcessor(SeAssembly assembly)
         {
@@ -19,24 +22,9 @@ namespace SolidEdgeAdd_In.Processors
 
         public bool Initialize()
         {
-            SeDocument document = (SeDocument)_assembly;
+            if (!IsLoaded_Data()) return false;
 
-            using var properties = new PropertyUtils(document);
-            int count = properties.Count;
-
-            // MULTIPLIER
-            if (count == 0)
-            {
-                var (isConfirmed, multiplier) = DialogUtils.GetMultiplier();
-                if (isConfirmed) { properties.Count = multiplier; _multiplier = multiplier; }
-                else { return false; }
-            }
-            else { _multiplier = count; }
-
-            // SCAN DATA
-            SeOccurrences occurrences = null;
-            try { occurrences = _assembly.Occurrences; DataUtils.BuildDataForSetCount(occurrences, _data); }
-            finally { Helpers.ReleaseCom(ref occurrences); }
+            if (!IsLoaded_Multiplier()) return false;
 
             return true;
         }
@@ -52,53 +40,89 @@ namespace SolidEdgeAdd_In.Processors
             HashSet<string> processedPaths = new(StringComparer.OrdinalIgnoreCase);
             SeOccurrences occurrences = null;
 
-            // APPLY COUNTS
             try { occurrences = _assembly.Occurrences; DataUtils.ApplyCounts(occurrences, _data, _multiplier, processedPaths); }
             finally { Helpers.ReleaseCom(ref occurrences); }
 
-            // REPORTING
             foreach (var item in _data)
             {
                 try
                 {
                     string type = item.Value.Type;
-                    string fileName = item.Value.FileName;
+                    string name = item.Value.Name;
 
-                    int count = item.Value.OccurrenceCount;
-                    int oldCount = item.Value.Count;
+                    int occurrenceCount = item.Value.OccurrenceCount;
+                    int count = item.Value.Count;
                     int targetCount = _multiplier * count;
 
                     if (!processedPaths.Contains(item.Key))
                     {
                         missFiles++;
-                        _feedback.AppendLine($"{fileName,-30} | {type} | --- | --- | --- | --- |");
+                        _feedback.AppendLine($"{name,-30} | {type} | --- | --- | --- | --- |");
                         continue;
                     }
 
-                    string I = oldCount.ToString("D3");
-                    string C = count.ToString("D3");
-                    string MC = targetCount.ToString("D3");
+                    string P = count.ToString("D3"); 
+                    string C = occurrenceCount.ToString("D3"); 
+                    string MC = targetCount.ToString("D3"); 
 
-                    _feedback.AppendLine($"{fileName,-30} | {type} | {M} | {I} | {C} | {MC} |");
+                    _feedback.AppendLine($"{name,-30} | {type} | {P} | {M} | {C} | {MC} |");
                 }
                 catch
                 {
                     missFiles++;
                     string errorFileName = "Unknown file";
-                    try { errorFileName = item.Value.FileName ?? Path.GetFileNameWithoutExtension(item.Key); } catch { }
+                    try { errorFileName = item.Value.Name ?? Path.GetFileNameWithoutExtension(item.Key); } catch { }
                     _feedback.AppendLine($"{errorFileName,-30} | --- | --- | --- | --- | --- | --- |");
                     continue;
                 }
             }
 
-            // SUMMARY
-            if (missFiles == 0) { _feedback.AppendLine($"Successfully added property - Quantity for all files."); }
+            if (missFiles == 0) { _feedback.AppendLine($"Successfully added property - Count for all files."); }
             else { _feedback.AppendLine($"Skipped {missFiles} files."); }
 
             DisplayFeedback();
         }
 
-        // DIALOG WINDOW
+        private bool IsLoaded_Data()
+        {
+            SeOccurrences occurrences = null;
+            try
+            {
+                occurrences = _assembly.Occurrences;
+                DataUtils.BuildDataForSetCountProperty(occurrences, _data);
+            }
+            finally { Helpers.ReleaseCom(ref occurrences); }
+
+            _dataCount = _data.Count;
+            if (!Helpers.IsMessageAccepted($"Files {_dataCount}.")) return false;
+
+            return true;
+        }
+
+        private bool IsLoaded_Multiplier()
+        {
+            SeDocument document = (SeDocument)_assembly;
+            using PropertyUtils properties = new(document);
+            int count = properties.Count;
+
+            if (count == 0)
+            {
+                (bool isConfirmed, int multiplier) = DialogUtils.GetMultiplier();
+                if (isConfirmed)
+                {
+                    properties.Count = multiplier;
+                    _multiplier = multiplier;
+                    return true;
+                }
+                return false;
+            }
+
+            _multiplier = count;
+            if (!Helpers.IsMessageAccepted($"Multiplier {_multiplier}.")) return false;
+
+            return true;
+        }
+
         private void DisplayFeedback()
         {
             using Form form = new()

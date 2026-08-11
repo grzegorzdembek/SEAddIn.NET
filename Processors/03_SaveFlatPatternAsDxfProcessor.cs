@@ -5,7 +5,12 @@ namespace SolidEdgeAdd_In.Processors
     public class SaveFlatPatternAsDxfProcessor
     {
         private readonly SeDocument _document;
-        private string _dxfFilePath;
+        private string _documentPath;
+
+        private string _projectDirectory;
+        private string _documentName;
+
+        private string _dxfPath;
 
         public SaveFlatPatternAsDxfProcessor(SeDocument document)
         {
@@ -14,25 +19,23 @@ namespace SolidEdgeAdd_In.Processors
 
         public bool Initialize()
         {
-            string documentFilePath = _document.FullName;
+            _documentPath = _document.FullName;
+            if (string.IsNullOrEmpty(_documentPath)) { MessageBox.Show("Save the file first to export flat pattern."); return false; }
 
-            if (string.IsNullOrEmpty(documentFilePath))
-            {
-                MessageBox.Show("Save the file in Solid Edge first to export flat pattern.", "Save Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
+            try { _document.Save(); } catch { MessageBox.Show("Cannot update document."); return false; }
 
-            string fileName = Path.GetFileNameWithoutExtension(documentFilePath);
-            string projectDirectory = Path.GetDirectoryName(documentFilePath);
+            _projectDirectory = Path.GetDirectoryName(_documentPath);
+            _documentName = Path.GetFileNameWithoutExtension(_documentPath);
 
-            using var properties = new PropertyUtils(_document);
-            string dxfFileName = $"{properties.Thickness}mm_{properties.Count}szt_{properties.Material}_{fileName}.dxf";
-            string dxfFilePath = Path.Combine(projectDirectory, dxfFileName);
+            using PropertyUtils properties = new (_document);
 
-            (bool isConfirmed, string editedPath) = DialogUtils.GetEditedPath(dxfFilePath);
+            string dxfName = $"{properties.Thickness}mm_{properties.Count}szt_{properties.Material}_{_documentName}.dxf";
+            string dxfPath = Path.Combine(_projectDirectory, dxfName);
+
+            (bool isConfirmed, string editedPath) = DialogUtils.GetEditedPath(dxfPath);
             if (!isConfirmed || string.IsNullOrEmpty(editedPath)) { return false; }
 
-            _dxfFilePath = editedPath;
+            _dxfPath = editedPath;
 
             return true;
         }
@@ -49,13 +52,13 @@ namespace SolidEdgeAdd_In.Processors
 
                 if (flatPatterns == null || models == null || flatPatterns.Count == 0 || models.Count == 0)
                 {
-                    MessageBox.Show("Cannot save DXF - missing flat pattern.", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Cannot save DXF - missing flat pattern.");
                 }
                 else
                 {
-                    using var properties = new PropertyUtils(_document);
+                    using PropertyUtils properties = new (_document);
                     properties.UpdateDxfDate();
-                    models.SaveAsFlatDXFEx(_dxfFilePath, null, null, null, true);
+                    models.SaveAsFlatDXFEx(_dxfPath, null, null, null, true);
                     _document.Save();
                 }
             }

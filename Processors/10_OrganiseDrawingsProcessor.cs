@@ -5,57 +5,60 @@ namespace SolidEdgeAdd_In.Processors
     public class OrganiseDrawingsProcessor
     {
         private readonly SeAssembly _assembly;
-        private List<(string FileName, string Path)> _pdfFiles;
-        private List<(string FileName, string Path)> _dxfFiles;
-        private readonly Dictionary<string, FileData> _occurrencesData;
 
+        private readonly Dictionary<string, FileData> _data;
+
+        private string _assemblyFilePath;
         private string _projectDirectory;
+
         private string _drawingsDirectory;
+
         private string _targetDirectory;
 
+        private List<(string FileName, string Path)> _pdfFiles;
+        private List<(string FileName, string Path)> _dxfFiles;
+        
         public OrganiseDrawingsProcessor(SeAssembly assembly)
         {
             _assembly = assembly;
-            _pdfFiles = new List<(string FileName, string Path)>();
-            _dxfFiles = new List<(string FileName, string Path)>();
-            _occurrencesData = new Dictionary<string, FileData>(StringComparer.OrdinalIgnoreCase);
+
+            _data = new Dictionary<string, FileData>(StringComparer.OrdinalIgnoreCase);
         }
 
         public bool Initialize()
         {
-            if (_assembly == null || string.IsNullOrEmpty(_assembly.FullName)) { return false; }
-
-            string assemblyFilePath = _assembly.FullName;
-            _projectDirectory = Path.GetDirectoryName(assemblyFilePath);
-
-            if (string.IsNullOrEmpty(_projectDirectory)) { return false; }
+            _assemblyFilePath = _assembly.FullName;
+            _projectDirectory = Path.GetDirectoryName(_assemblyFilePath);
 
             _drawingsDirectory = Path.Combine(_projectDirectory, Constants.Folders.Drawings);
-            if (!Directory.Exists(_drawingsDirectory)) { Directory.CreateDirectory(_drawingsDirectory); }
+            Directory.CreateDirectory(_drawingsDirectory);
 
-            string assemblyFileName = Path.GetFileNameWithoutExtension(assemblyFilePath);
+            string assemblyFileName = Path.GetFileNameWithoutExtension(_assemblyFilePath);
             _targetDirectory = Path.Combine(_drawingsDirectory, assemblyFileName);
-            if (!Directory.Exists(_targetDirectory)) { Directory.CreateDirectory(_targetDirectory); }
+            Directory.CreateDirectory(_targetDirectory);
 
             _pdfFiles = Directory.GetFiles(_projectDirectory, "*.pdf", SearchOption.TopDirectoryOnly)
-                                .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
+                               .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
 
             _dxfFiles = Directory.GetFiles(_projectDirectory, "*.dxf", SearchOption.TopDirectoryOnly)
                                  .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
 
+            if (_pdfFiles.Count == 0 && _dxfFiles.Count == 0) { MessageBox.Show("No PDF or DXF files found in the project directory.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return false; }
+
             LoadOccurrencesData();
+
+            if (_data.Count == 0) { MessageBox.Show("No occurrences found to process.", "Stop", MessageBoxButtons.OK, MessageBoxIcon.Information); return false; }
+
             return true;
         }
 
         public void Process()
         {
-            if (_occurrencesData == null || _occurrencesData.Count == 0) { return; }
-
             HashSet<string> processedFileNames = new(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var item in _occurrencesData)
+            foreach (var item in _data)
             {
-                string fileName = item.Value.FileName;
+                string fileName = item.Value.Name;
                 string type = item.Value.Type;
 
                 if (processedFileNames.Contains(fileName)) { continue; }
@@ -63,24 +66,17 @@ namespace SolidEdgeAdd_In.Processors
                 string subDirectoryName = GetTargetSubDirectory(type);
                 if (string.IsNullOrEmpty(subDirectoryName)) { continue; }
 
+                var matchingPdfs = _pdfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
+                var matchingDxfs = _dxfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
+
+                if (!matchingPdfs.Any() && !matchingDxfs.Any()) { processedFileNames.Add(fileName); continue; }
+
                 string currentTargetDirectory = Path.Combine(_targetDirectory, subDirectoryName);
-                if (!Directory.Exists(currentTargetDirectory)) { Directory.CreateDirectory(currentTargetDirectory); }
+                Directory.CreateDirectory(currentTargetDirectory);
 
-                // PDF
-                var matchingPdfs = _pdfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)).ToList();
-                foreach (var pdf in matchingPdfs)
-                {
-                    string expectedPdfPath = Path.Combine(currentTargetDirectory, pdf.FileName + ".pdf");
-                    File.Copy(pdf.Path, expectedPdfPath, true);
-                }
+                foreach (var pdf in matchingPdfs) { string expectedPdfPath = Path.Combine(currentTargetDirectory, pdf.FileName + ".pdf"); File.Copy(pdf.Path, expectedPdfPath, true); }
 
-                // DXF
-                var matchingDxfs = _dxfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)).ToList();
-                foreach (var dxf in matchingDxfs)
-                {
-                    string expectedDxfPath = Path.Combine(currentTargetDirectory, dxf.FileName + ".dxf");
-                    File.Copy(dxf.Path, expectedDxfPath, true);
-                }
+                foreach (var dxf in matchingDxfs) { string expectedDxfPath = Path.Combine(currentTargetDirectory, dxf.FileName + ".dxf"); File.Copy(dxf.Path, expectedDxfPath, true); }
 
                 processedFileNames.Add(fileName);
             }
@@ -102,7 +98,7 @@ namespace SolidEdgeAdd_In.Processors
             try
             {
                 occurrences = _assembly.Occurrences;
-                DataUtils.BuildDataForOrganiseDrawings(occurrences, _occurrencesData);
+                DataUtils.BuildDataForOrganiseDrawings(occurrences, _data);
             }
             finally { Helpers.ReleaseCom(ref occurrences); }
         }

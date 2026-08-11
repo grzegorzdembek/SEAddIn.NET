@@ -17,7 +17,6 @@ global using SeISolidEdgeAddIn = SolidEdgeFramework.ISolidEdgeAddIn;
 global using SeConnectMode = SolidEdgeFramework.SeConnectMode;
 global using SeDisconnectMode = SolidEdgeFramework.SeDisconnectMode;
 
-
 global using SeAddIn = SolidEdgeFramework.AddIn;
 global using SeISEAddInEx = SolidEdgeFramework.ISEAddInEx;
 
@@ -33,17 +32,30 @@ global using SeDraft = SolidEdgeDraft.DraftDocument;
 global using SeOccurrences = SolidEdgeAssembly.Occurrences;
 global using SeOccurrence = SolidEdgeAssembly.Occurrence;
 
-global using SeBends = SolidEdgePart.Bends; 
 global using SeModels = SolidEdgePart.Models;
 global using SeModel = SolidEdgePart.Model;
 global using SeFlatPatternModels = SolidEdgePart.FlatPatternModels;
-global using SeFlatPatternModel = SolidEdgePart.FlatPatternModel;
 global using SeFlanges = SolidEdgePart.Flanges;
 
-global using SeRefPlane = SolidEdgePart.RefPlane;
+global using SeRefAxes = SolidEdgePart.RefAxes;
 global using SeRefAxis = SolidEdgePart.RefAxis;
+global using SeRefPlanes = SolidEdgePart.RefPlanes;
+global using SeRefPlane = SolidEdgePart.RefPlane;
+global using SeCoordinateSystems = SolidEdgePart.CoordinateSystems;
 global using SeCoordinateSystem = SolidEdgePart.CoordinateSystem;
+
+global using SeAsmRefPlanes = SolidEdgeAssembly.AsmRefPlanes;
 global using SeAsmRefPlane = SolidEdgeAssembly.AsmRefPlane;
+
+global using SeAsmCoordinateSystems = SolidEdgePart.CoordinateSystems;
+global using SeAsmCoordinateSystem = SolidEdgePart.CoordinateSystem;
+
+global using Sketchs = SolidEdgePart.Sketchs;
+global using Sketch = SolidEdgePart.Sketch;
+
+global using SePMI = SolidEdgeFrameworkSupport.PMI;
+global using SeDimensions = SolidEdgeFrameworkSupport.Dimensions;
+global using SeDimension = SolidEdgeFrameworkSupport.Dimension;
 
 global using SeDocuments = SolidEdgeFramework.Documents;
 global using SeDraftSheet = SolidEdgeDraft.Sheet;
@@ -67,12 +79,6 @@ global using SeProperty = SolidEdgeFramework.Property;
 
 global using SeView = SolidEdgeFramework.View;
 global using SeImageQualityType = SolidEdgeFramework.SeImageQualityType;
-
-
-global using ExcelXlPlacement = Microsoft.Office.Interop.Excel.XlPlacement;
-global using ExcelXlDeleteShiftDirection = Microsoft.Office.Interop.Excel.XlDeleteShiftDirection;
-global using MsoTriState = Microsoft.Office.Core.MsoTriState;
-
 
 global using ExcelApp = Microsoft.Office.Interop.Excel.Application;
 global using ExcelWorkbooks = Microsoft.Office.Interop.Excel.Workbooks;

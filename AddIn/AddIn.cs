@@ -74,7 +74,7 @@ namespace SolidEdgeAdd_In
                 CATID_SE_Assembly
             };
 
-            if (Array.Exists(supportedEnvironments, env => env.Equals(environmentCategory)))
+            if (supportedEnvironments.Contains(environmentCategory))
             {
                 var ribbon = new SolidEdgeRibbon(m_application);
                 m_Controller.Add(ribbon, environmentCategory, bFirstTime);

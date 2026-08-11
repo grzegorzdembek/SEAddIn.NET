@@ -5,55 +5,50 @@ namespace SolidEdgeAdd_In.Processors
     public class CopyDrawingsProcessor
     {
         private readonly SeDocument _document;
+       
+        private string _documentFilePath;
+        private string _projectDirectory;
+
+        private string _packagesDirectory;
+        private string _selectedDirectory;
+        private string _drawingsDirectory;
+
+        private string _excelFilePath;
+
         private List<(string FileName, string Path)> _pdfFiles;
         private List<(string FileName, string Path)> _dxfFiles;
-
-        private string _projectDirectory;
-        private string _packagesDirectory;
-        private string _excelFilePath;
-        private string _drawingsDirectory;
 
         public CopyDrawingsProcessor(SeDocument document)
         {
             _document = document;
-            _pdfFiles = new List<(string FileName, string Path)>();
-            _dxfFiles = new List<(string FileName, string Path)>();
         }
 
         public bool Initialize()
         {
-            if (_document == null || string.IsNullOrEmpty(_document.FullName)) { return false; }
 
-            _projectDirectory = Path.GetDirectoryName(_document.FullName);
-            string expectedPackagesDirectory = Path.Combine(_projectDirectory, Constants.Folders.Packages);
+            _documentFilePath = _document.FullName;
+            _projectDirectory = Path.GetDirectoryName(_documentFilePath);
 
-            if (!Directory.Exists(expectedPackagesDirectory))
-            {
-                MessageBox.Show("Packages folder not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
+            _packagesDirectory = Path.Combine(_projectDirectory, Constants.Folders.Packages);
 
-            // DIALOG
+            if (!Directory.Exists(_packagesDirectory)) { MessageBox.Show("Packages folder not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return false;}
+
             FolderBrowserDialog fbd = new()
             {
                 Description = "Select the folder where you want to add the Drawings folder (containing the sheet metal summary):",
-                SelectedPath = expectedPackagesDirectory,
+                SelectedPath = _packagesDirectory,
                 ShowNewFolderButton = false
             };
 
-            if (fbd.ShowDialog() == DialogResult.OK) { _packagesDirectory = fbd.SelectedPath; }
+            if (fbd.ShowDialog() == DialogResult.OK) { _selectedDirectory = fbd.SelectedPath; }
             else { return false; }
 
-            // VALIDATION
-            string[] excelFiles = Directory.GetFiles(_packagesDirectory, "*.xlsx");
-            if (excelFiles.Length == 0 || excelFiles.Length > 1)
-            {
-                MessageBox.Show("Missing or multiple sheet metal summaries found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
+            string[] excelFiles = Directory.GetFiles(_selectedDirectory, "*.xlsx");
+            if (excelFiles.Length == 0 || excelFiles.Length > 1) { MessageBox.Show("Missing or multiple sheet metal summaries found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return false; }
 
             _excelFilePath = excelFiles[0];
-            _drawingsDirectory = Path.Combine(_packagesDirectory, Constants.Folders.Drawings);
+
+            _drawingsDirectory = Path.Combine(_selectedDirectory, Constants.Folders.Drawings);
 
             _pdfFiles = Directory.GetFiles(_projectDirectory, "*.pdf", SearchOption.TopDirectoryOnly)
                                  .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
@@ -61,12 +56,14 @@ namespace SolidEdgeAdd_In.Processors
             _dxfFiles = Directory.GetFiles(_projectDirectory, "*.dxf", SearchOption.TopDirectoryOnly)
                                  .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
 
+            if (_pdfFiles.Count == 0 && _dxfFiles.Count == 0) { MessageBox.Show("No PDF or DXF files found in the project directory.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return false; }
+
             return true;
         }
 
         public void Process()
         {
-            if (!Directory.Exists(_drawingsDirectory)) { Directory.CreateDirectory(_drawingsDirectory); }
+            Directory.CreateDirectory(_drawingsDirectory); 
 
             ExcelApp excelApp = null;
             ExcelWorkbooks workbooks = null;
@@ -101,24 +98,16 @@ namespace SolidEdgeAdd_In.Processors
                 rows = usedRange.Rows;
                 columns = usedRange.Columns;
 
-                // COLUMNS SETUP
-                int fileNameColumnIndex = ExcelUtils.GetColumnNumber(usedRange, Constants.ExcelHeaders.FileName);
-                if (fileNameColumnIndex == 0)
-                {
-                    MessageBox.Show("Column not found in the Excel file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
+                int fileNameColumnIndex = ExcelUtils.GetColumnIndex(usedRange, Constants.ExcelHeaders.FileName);
+                if (fileNameColumnIndex == 0) { MessageBox.Show("Column not found in the Excel file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
 
                 int rowCount = rows.Count;
                 int colCount = columns.Count;
-                int drawingsColumnIndex = ExcelUtils.GetColumnNumber(usedRange, Constants.ExcelHeaders.Drawings);
+
+                int drawingsColumnIndex = ExcelUtils.GetColumnIndex(usedRange, Constants.ExcelHeaders.Drawings);
                 bool isNewColumn = false;
 
-                if (drawingsColumnIndex == 0)
-                {
-                    drawingsColumnIndex = colCount + 1;
-                    isNewColumn = true;
-                }
+                if (drawingsColumnIndex == 0) { drawingsColumnIndex = colCount + 1; isNewColumn = true; }
 
                 try
                 {
@@ -128,7 +117,6 @@ namespace SolidEdgeAdd_In.Processors
                 }
                 finally { Helpers.ReleaseCom(ref startCell); Helpers.ReleaseCom(ref endCell); }
 
-                // DATA PROCESSING
                 object[,] data = (object[,])expandedRange.Value2;
                 data[1, drawingsColumnIndex] = Constants.ExcelHeaders.Drawings;
 
@@ -146,19 +134,17 @@ namespace SolidEdgeAdd_In.Processors
                             string expectedPdfPath = Path.Combine(_drawingsDirectory, fileName + ".pdf");
                             string expectedDxfPath = Path.Combine(_drawingsDirectory, fileName + ".dxf");
 
-                            // PDF
                             if (File.Exists(expectedPdfPath)) { isPdfReady = true; }
                             else
                             {
-                                var matchingPdfs = _pdfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)).ToList();
+                                var matchingPdfs = _pdfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
                                 foreach (var pdf in matchingPdfs) { File.Copy(pdf.Path, expectedPdfPath, true); isPdfReady = true; }
                             }
 
-                            // DXF
                             if (File.Exists(expectedDxfPath)) { isDxfReady = true; }
                             else
                             {
-                                var matchingDxfs = _dxfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)).ToList();
+                                var matchingDxfs = _dxfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
                                 foreach (var dxf in matchingDxfs) { File.Copy(dxf.Path, expectedDxfPath, true); isDxfReady = true; }
                             }
                         }
@@ -170,7 +156,6 @@ namespace SolidEdgeAdd_In.Processors
 
                 expandedRange.Value2 = data;
 
-                // FORMATTING
                 if (isNewColumn)
                 {
                     headerCell = (ExcelRange)cells[1, drawingsColumnIndex];
@@ -196,10 +181,11 @@ namespace SolidEdgeAdd_In.Processors
                 Helpers.ReleaseCom(ref usedRange); Helpers.ReleaseCom(ref worksheet);
                 Helpers.ReleaseCom(ref sheets);
 
-                if (workbook != null) { try { workbook.Close(false); } catch { } }
-                Helpers.ReleaseCom(ref workbook); Helpers.ReleaseCom(ref workbooks);
+                try { workbook?.Close(false); } catch { }
+                Helpers.ReleaseCom(ref workbook); 
+                Helpers.ReleaseCom(ref workbooks);
 
-                if (excelApp != null) { try { excelApp.Quit(); } catch { } }
+                try { excelApp?.Quit(); } catch { }
                 Helpers.ReleaseCom(ref excelApp);
             }
         }

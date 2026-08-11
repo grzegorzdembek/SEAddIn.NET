@@ -2,7 +2,7 @@ namespace SolidEdgeAdd_In.Utils
 {
     public class ExcelUtils
     {
-        public static int GetColumnNumber(ExcelRange range, string columnName)
+        public static int GetColumnIndex(ExcelRange range, string columnName)
         {
             ExcelRange rows = null;
             ExcelRange firstRow = null;
@@ -13,18 +13,56 @@ namespace SolidEdgeAdd_In.Utils
                 firstRow = rows[1];
                 object[,] rowData = (object[,])firstRow.Value2;
 
-                if (rowData != null)
-                {
-                    int colCount = rowData.GetLength(1);
-                    for (int i = 1; i <= colCount; i++)
-                    {
-                        if (rowData[1, i]?.ToString() == columnName) { return i; }
-                    }
-                }
-                return 0;
+                return Enumerable.Range(1, rowData.GetLength(1)).FirstOrDefault(i => rowData[1, i]?.ToString() == columnName);
             }
             catch { return 0; }
             finally { Helpers.ReleaseCom(ref firstRow); Helpers.ReleaseCom(ref rows); }
+        }
+
+        public static void ProcessDataInMemory(object[,] data, int typeColIdx, int fileNameColIdx, int countColIdx, int dxfColIdx, int rowCount, int multiplier, Dictionary<string, FileData> occurrencesData)
+        {
+            data[1, dxfColIdx] = Constants.Properties.DxfDate;
+
+            for (int i = 2; i <= rowCount; i++)
+            {
+                if (data[i, typeColIdx] == null || data[i, fileNameColIdx] == null) continue;
+
+                string rawType = data[i, typeColIdx].ToString().Trim();
+                string fileName = data[i, fileNameColIdx].ToString().Trim();
+
+                string mappedType = rawType;
+                if (rawType == Constants.PartTypes.Assembly) mappedType = Constants.Styles.Assembly;
+                else if (rawType == Constants.PartTypes.Part) mappedType = Constants.Styles.Part;
+                else if (rawType == Constants.PartTypes.Steelmaking) mappedType = Constants.Styles.Steelmaking;
+                else if (rawType == Constants.PartTypes.Commercial) mappedType = Constants.Styles.Commercial;
+                else if (rawType == Constants.PartTypes.Standard) mappedType = Constants.Styles.Standard;
+                else if (rawType == Constants.PartTypes.SheetMetal) mappedType = Constants.Styles.SheetMetal;
+
+                data[i, typeColIdx] = mappedType;
+
+                if (data[i, countColIdx] != null && int.TryParse(data[i, countColIdx].ToString(), out int currentQty))
+                {
+                    data[i, countColIdx] = currentQty * multiplier;
+                }
+
+                if (mappedType.Equals(Constants.Styles.SheetMetal, StringComparison.OrdinalIgnoreCase))
+                {
+                    FileData filedata = occurrencesData.Values.FirstOrDefault(f => f.Name.Equals(fileName, StringComparison.OrdinalIgnoreCase));
+
+                    if (filedata != null)
+                    {
+                        data[i, dxfColIdx] = filedata.DxfDate;
+                    }
+                    else
+                    {
+                        data[i, dxfColIdx] = "Missing DXF Property";
+                    }
+                }
+                else
+                {
+                    data[i, dxfColIdx] = "-";
+                }
+            }
         }
 
         public static void Styles(ExcelWorkbook workbook)
@@ -83,24 +121,6 @@ namespace SolidEdgeAdd_In.Utils
             }
         }
 
-        public static void TypeMemory(object[,] data, int typeColumnIndex, int rowCount)
-        {
-            for (int i = 2; i <= rowCount; i++)
-            {
-                object rawValue = data[i, typeColumnIndex];
-                if (rawValue == null) { continue; }
-
-                string value = rawValue.ToString().Trim();
-
-                if (value == Constants.PartTypes.Assembly) { data[i, typeColumnIndex] = Constants.Styles.Assembly; }
-                else if (value == Constants.PartTypes.Part) { data[i, typeColumnIndex] = Constants.Styles.Part; }
-                else if (value == Constants.PartTypes.Steelmaking) { data[i, typeColumnIndex] = Constants.Styles.Steelmaking; }
-                else if (value == Constants.PartTypes.Commercial) { data[i, typeColumnIndex] = Constants.Styles.Commercial; }
-                else if (value == Constants.PartTypes.Standard) { data[i, typeColumnIndex] = Constants.Styles.Standard; }
-                else if (value == Constants.PartTypes.SheetMetal) { data[i, typeColumnIndex] = Constants.Styles.SheetMetal; }
-            }
-        }
-
         public static void Colors(ExcelWorksheet worksheet, int typeColumnIndex)
         {
             ExcelRange range = null;
@@ -140,18 +160,6 @@ namespace SolidEdgeAdd_In.Utils
                 Helpers.ReleaseCom(ref columns);
                 Helpers.ReleaseCom(ref dataRange);
                 Helpers.ReleaseCom(ref range);
-            }
-        }
-
-        public static void CountMemory(object[,] data, int multiplier, int countColumnIndex, int rowCount)
-        {
-            for (int i = 3; i <= rowCount; i++)
-            {
-                object rawValue = data[i, countColumnIndex];
-                if (rawValue != null && int.TryParse(rawValue.ToString(), out int currentQty))
-                {
-                    data[i, countColumnIndex] = currentQty * multiplier;
-                }
             }
         }
 
@@ -197,19 +205,6 @@ namespace SolidEdgeAdd_In.Utils
                 Helpers.ReleaseCom(ref firstRow); Helpers.ReleaseCom(ref columns);
                 Helpers.ReleaseCom(ref rows); Helpers.ReleaseCom(ref range);
             }
-        }
-
-        public static string GetValue(ExcelRange range, int row, int column)
-        {
-            ExcelRange cells = null;
-            try
-            {
-                cells = range.Cells;
-                object objectValue = cells[row, column].Value;
-                return objectValue?.ToString()?.Trim();
-            }
-            catch { return null; }
-            finally { Helpers.ReleaseCom(ref cells); }
         }
 
         private static void Rule(ExcelFormatConditions conditions, string address, string criteria, Color color)

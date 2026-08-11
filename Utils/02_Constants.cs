@@ -2,15 +2,14 @@
 {
     public static class Constants
     {
-        // FOLDERS
         public static class Folders
         {
             public const string Packages = "Paczki";
             public const string Drawings = "Rysunki";
             public const string Thumbnails = "Miniatury";
+            public const string Lists = "Listy";
         }
 
-        // PROPERTIES
         public static class Properties
         {
             public const string CustomSet = "Custom";
@@ -34,18 +33,16 @@
             public const string Finish = "Finish";
         }
 
-        // TYPES
         public static class PartTypes
         {
             public const string Assembly = "A";
             public const string SheetMetal = "B";
             public const string Part = "C";
-            public const string Commercial = "H";
+            public const string Commercial = "Z";
             public const string Steelmaking = "K";
             public const string Standard = "N";
         }
 
-        // EXCEL HEADERS
         public static class ExcelHeaders
         {
             public const string Lp = "Lp";
@@ -65,7 +62,6 @@
             public const string DxfDate = "Dxf";
         }
 
-        // STYLES
         public static class Styles
         {
             public const string Assembly = "Złożenie";

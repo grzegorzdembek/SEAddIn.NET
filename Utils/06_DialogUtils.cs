@@ -12,15 +12,15 @@ namespace SolidEdgeAdd_In.Utils
                 Width = 800,
                 Height = 200,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Execute save?",
+                Text = "Zapisać plik?",
                 StartPosition = FormStartPosition.CenterScreen
             };
 
-            Label label = new() { Left = 20, Top = 20, Width = 740, Text = "Generated path (editable):" };
+            Label label = new() { Left = 20, Top = 20, Width = 740, Text = "Wygenerowana scieżka (do edycji):" };
             TextBox textBox = new() { Left = 20, Top = 50, Width = 740, Text = filePath };
 
-            Button yesButton = new() { Text = "Yes", Left = 550, Width = 100, Top = 100, DialogResult = DialogResult.Yes };
-            Button noButton = new() { Text = "No", Left = 660, Width = 100, Top = 100, DialogResult = DialogResult.No };
+            Button yesButton = new() { Text = "Tak", Left = 550, Width = 100, Top = 100, DialogResult = DialogResult.Yes };
+            Button noButton = new() { Text = "Nie", Left = 660, Width = 100, Top = 100, DialogResult = DialogResult.No };
 
             prompt.Controls.Add(label); prompt.Controls.Add(textBox);
             prompt.Controls.Add(yesButton); prompt.Controls.Add(noButton);
@@ -45,13 +45,13 @@ namespace SolidEdgeAdd_In.Utils
                 Width = 300,
                 Height = 160,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Data Input",
+                Text = "Mnożnik złożenia",
                 StartPosition = FormStartPosition.CenterScreen,
                 MinimizeBox = false,
                 MaximizeBox = false
             };
 
-            Label textLabel = new() { Left = 20, Top = 20, Text = "ENTER MULTIPLIER:", AutoSize = true };
+            Label textLabel = new() { Left = 20, Top = 20, Text = "Podaj mnożnik:", AutoSize = true };
             TextBox textBox = new() { Left = 20, Top = 50, Width = 240 };
             Button confirmation = new() { Text = "OK", Left = 160, Width = 100, Top = 80, DialogResult = DialogResult.OK };
 
@@ -88,13 +88,13 @@ namespace SolidEdgeAdd_In.Utils
                 Width = 350,
                 Height = 320,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Select Options",
+                Text = "Wybór typu",
                 StartPosition = FormStartPosition.CenterScreen,
                 MinimizeBox = false,
                 MaximizeBox = false
             };
 
-            Label label = new() { Left = 20, Top = 20, Width = 300, Text = "Select Occurrences you need:", AutoSize = true };
+            Label label = new() { Left = 20, Top = 20, Width = 300, Text = "Wybierz typ:", AutoSize = true };
             CheckedListBox checkedListBox = new() { Left = 20, Top = 50, Width = 290, Height = 160, CheckOnClick = true };
 
             foreach (var option in availableOptions) { checkedListBox.Items.Add(option); }
@@ -117,18 +117,18 @@ namespace SolidEdgeAdd_In.Utils
             return selectedTypes;
         }
 
-        public static bool IsShotsNeeded()
+        public static bool IsGenerateThumbnails()
         {
             DialogResult result = MessageBox.Show(
-                "Generate thumbnails?",
-                "Thumbnails",
+                "Chcesz wygenerować miniatury?",
+                "Miniatury",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
 
             return result == DialogResult.Yes;
         }
 
-        private static string PartsListHelper(List<string> savedSettings)
+        public static string GetPartsListType(List<string> savedSettings)
         {
             string selected = null;
 
@@ -137,7 +137,7 @@ namespace SolidEdgeAdd_In.Utils
                 Width = 300,
                 Height = 200,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Parts list table properties",
+                Text = "Lista części",
                 StartPosition = FormStartPosition.CenterScreen
             };
 
@@ -155,65 +155,6 @@ namespace SolidEdgeAdd_In.Utils
             }
 
             return selected;
-        }
-
-        public static string GetPartsListType(SeApp application, SeAssembly assembly)
-        {
-            SeDocuments documents = null;
-            SeDraft draft = null;
-            SeDraftSheet sheet = null;
-            SeDrawingViews drawingViews = null;
-            SeDrawingView drawingView = null;
-            SeModelLinks modelLinks = null;
-            SeModelLink modelLink = null;
-            SePartsLists partsLists = null;
-            SePartsList partsList = null;
-
-            try
-            {
-                documents = application.Documents;
-                draft = (SeDraft)documents.Add("SolidEdge.DraftDocument", Missing.Value);
-                sheet = draft.ActiveSheet;
-                modelLinks = draft.ModelLinks;
-                modelLink = modelLinks.Add(assembly.FullName);
-                drawingViews = sheet.DrawingViews;
-
-                drawingView = drawingViews.AddAssemblyView(modelLink, SeViewOrientation.igFrontView, 0.1, 0.2, 0.2, SeAssemblyDrawingViewType.seAssemblyDesignedView);
-
-                partsLists = draft.PartsLists;
-                partsList = partsLists.AddEx(drawingView, 0, "", 0, 1);
-
-                Array listOfSavedSettings = Array.CreateInstance(typeof(object), 0);
-                partsList.GetListOfSavedSettings(out int numSavedSettings, ref listOfSavedSettings);
-
-                var settingsList = new List<string>();
-
-                if (listOfSavedSettings != null)
-                {
-                    foreach (var o in listOfSavedSettings)
-                    {
-                        if (o != null) { settingsList.Add(o.ToString()); }
-                    }
-                }
-
-                if (settingsList.Count == 0) { settingsList.Add("<No saved parts list styles available>"); }
-
-                return PartsListHelper(settingsList);
-            }
-            finally
-            {
-                Helpers.ReleaseCom(ref partsList); Helpers.ReleaseCom(ref partsLists);
-                Helpers.ReleaseCom(ref modelLink); Helpers.ReleaseCom(ref modelLinks);
-                Helpers.ReleaseCom(ref drawingView); Helpers.ReleaseCom(ref drawingViews);
-                Helpers.ReleaseCom(ref sheet);
-
-                if (draft != null)
-                {
-                    try { draft.Close(false); } catch { }
-                }
-
-                Helpers.ReleaseCom(ref draft); Helpers.ReleaseCom(ref documents);
-            }
         }
     }
 }

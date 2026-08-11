@@ -1,9 +1,8 @@
 namespace SolidEdgeAdd_In.Utils
 {
-    // DATA MODEL
     public class FileData
     {
-        public string FileName { get; set; }
+        public string Name { get; set; }
         public string Type { get; set; }
         public int Status { get; set; }
         public string Thickness { get; set; }
@@ -19,7 +18,6 @@ namespace SolidEdgeAdd_In.Utils
         public string Finish { get; set; }
     }
 
-    // PROPERTY PROVIDER
     public class PropertyUtils : IDisposable
     {
         private SeFilePropertySets _filePropertySets = null;
@@ -31,7 +29,6 @@ namespace SolidEdgeAdd_In.Utils
         private static Dictionary<string, string> _materialTranslations = null;
         private static readonly object _cacheLock = new();
 
-        // CONSTRUCTORS
         public PropertyUtils(string filePath, bool readOnly = false)
         {
             _isFileMode = true;
@@ -45,7 +42,6 @@ namespace SolidEdgeAdd_In.Utils
             _docPropertySets = (SePropertySets)document.Properties;
         }
 
-        // GETTERS & SETTERS
         public string Color => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.Color);
         public string Finish => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.Finish);
         public string TitleEng => GetPropertyString(Constants.Properties.SummarySet, Constants.Properties.TitleEng);
@@ -113,7 +109,6 @@ namespace SolidEdgeAdd_In.Utils
         public string SizeX => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.SizeX);
         public string SizeY => GetPropertyString(Constants.Properties.CustomSet, Constants.Properties.SizeY);
 
-        // BOOLEAN FLAGS
         public bool HasType => !string.IsNullOrEmpty(Type);
         public bool HasStatus => Status >= 0;
         public bool HasThickness => !string.IsNullOrEmpty(Thickness);
@@ -129,12 +124,10 @@ namespace SolidEdgeAdd_In.Utils
         public bool IsTypeH => Type == Constants.PartTypes.Commercial;
         public bool IsTypeN => Type == Constants.PartTypes.Standard;
 
-        // METHODS
         public void UpdateDxfDate() { SetProperty(Constants.Properties.CustomSet, Constants.Properties.DxfDate, DateTime.Now.ToString("yyyy-MM-dd-HH-mm")); }
         public void ClearDxfDate() { SetProperty(Constants.Properties.CustomSet, Constants.Properties.DxfDate, String.Empty); }
         public void SetSheetMaterial() { SetProperty(Constants.Properties.CustomSet, Constants.Properties.MaterialName, "Blachy"); }
 
-        // CORE GETTERS & SETTERS
         private string GetPropertyString(string setName, string propName)
         {
             object rawValue = _isFileMode ? GetCustomFileProperty(setName, propName) : GetCustomDocProperty(setName, propName);
@@ -211,11 +204,9 @@ namespace SolidEdgeAdd_In.Utils
                 }
                 property = (SeProperty)properties.Add(propName, value);
             }
-            catch { /* */ }
             finally { Helpers.ReleaseCom(ref property); Helpers.ReleaseCom(ref properties); }
         }
 
-        // LOAD TRANSLATIONS
         private static void EnsureMaterialsLoaded()
         {
             if (_materialTranslations != null) { return; }
@@ -224,28 +215,24 @@ namespace SolidEdgeAdd_In.Utils
             {
                 if (_materialTranslations != null) { return; }
                 _materialTranslations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                try
+
+                string dllPath = Assembly.GetExecutingAssembly().Location;
+                string basePath = Path.GetDirectoryName(dllPath);
+                string materialsFile = Path.Combine(basePath, "materialy.txt");
+                if (File.Exists(materialsFile))
                 {
-                    string dllPath = Assembly.GetExecutingAssembly().Location;
-                    string basePath = Path.GetDirectoryName(dllPath);
-                    string materialsFile = Path.Combine(basePath, "materialy.txt");
-                    if (File.Exists(materialsFile))
+                    foreach (var line in File.ReadLines(materialsFile))
                     {
-                        foreach (var line in File.ReadLines(materialsFile))
+                        if (!string.IsNullOrWhiteSpace(line) && line.Contains(">"))
                         {
-                            if (!string.IsNullOrWhiteSpace(line) && line.Contains(">"))
-                            {
-                                string[] parts = line.Split('>');
-                                if (parts.Length == 2) { _materialTranslations[parts[0].Trim()] = parts[1].Trim(); }
-                            }
+                            string[] parts = line.Split('>');
+                            if (parts.Length == 2) { _materialTranslations[parts[0].Trim()] = parts[1].Trim(); }
                         }
                     }
                 }
-                catch { /* */ }
             }
         }
 
-        // MEMORY DISPOSE
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
