@@ -4,7 +4,7 @@ namespace SolidEdgeAdd_In.Processors
 {
     public class ExportDxfsProcessor
     {
-        private readonly SeAssembly _assembly; 
+        private readonly SeAssembly _assembly;
         private readonly SeApp _application;
 
         private string _assemblyPath;
@@ -17,15 +17,15 @@ namespace SolidEdgeAdd_In.Processors
         private int _multiplier;
         private string _targetDirectory;
 
-        private readonly Logger _logger; 
+        private readonly Logger _logger;
 
         public ExportDxfsProcessor(SeAssembly assembly)
         {
-            _assembly = assembly; 
-            _application = _assembly.Application; 
+            _assembly = assembly;
+            _application = _assembly.Application;
 
-            _data = new Dictionary<string, FileData>(StringComparer.OrdinalIgnoreCase); 
-            _logger = new Logger(); 
+            _data = new Dictionary<string, FileData>(StringComparer.OrdinalIgnoreCase);
+            _logger = new Logger();
         }
 
         public bool Initialize()
@@ -33,10 +33,21 @@ namespace SolidEdgeAdd_In.Processors
             _assemblyPath = _assembly.FullName;
             _projectDirectory = Path.GetDirectoryName(_assemblyPath);
             _assemblyName = Path.GetFileNameWithoutExtension(_assemblyPath);
-            
-            if (!IsLoaded_Data()) return false;
-            if (!IsLoaded_Multiplier()) return false;
-            if (!IsLoaded_TargetDirectory()) return false;
+
+            if (!IsLoaded_Data())
+            {
+                return false;
+            }
+
+            if (!IsLoaded_Multiplier())
+            {
+                return false;
+            }
+
+            if (!IsLoaded_TargetDirectory())
+            {
+                return false;
+            }
 
             return true;
         }
@@ -44,39 +55,41 @@ namespace SolidEdgeAdd_In.Processors
         public void Process()
         {
             SeDocument document = null;
-            SeModels models = null; 
+            SeModels models = null;
             SeModel model = null;
             SeFlatPatternModels flatPatterns = null;
-            SeFlanges flanges = null; 
-            ExcelApp excelApp = null; 
-            ExcelWorkbooks workbooks = null; ExcelWorkbook workbook = null; 
-            ExcelSheets xlSheets = null; 
+            SeFlanges flanges = null;
+            ExcelApp excelApp = null;
+            ExcelWorkbooks workbooks = null;
+            ExcelWorkbook workbook = null;
+            ExcelSheets xlSheets = null;
             ExcelWorksheet worksheet = null;
-            ExcelRange headerRange = null; 
+            ExcelRange headerRange = null;
             ExcelRange usedRange = null;
             ExcelRange columns = null;
             ExcelRange cells = null;
             ExcelRange startHeaderCell = null;
             ExcelRange endHeaderCell = null;
-            dynamic headerFont = null; 
+            dynamic headerFont = null;
             dynamic headerInterior = null;
-            dynamic headerBorders = null; 
+            dynamic headerBorders = null;
             dynamic usedBorders = null;
 
             try
             {
-                excelApp = new ExcelApp 
-                { 
-                    Visible = false, 
-                    DisplayAlerts = false, 
-                    ScreenUpdating = false, 
-                    EnableEvents = false 
+                excelApp = new ExcelApp
+                {
+                    Visible = false,
+                    DisplayAlerts = false,
+                    ScreenUpdating = false,
+                    EnableEvents = false
                 };
-                workbooks = excelApp.Workbooks; 
+
+                workbooks = excelApp.Workbooks;
                 workbook = workbooks.Add();
                 excelApp.Calculation = Microsoft.Office.Interop.Excel.XlCalculation.xlCalculationManual;
                 xlSheets = workbook.Sheets;
-                worksheet = (ExcelWorksheet)xlSheets[1]; 
+                worksheet = (ExcelWorksheet)xlSheets[1];
                 cells = worksheet.Cells;
 
                 object[,] headerData = new object[1, 12]
@@ -99,22 +112,22 @@ namespace SolidEdgeAdd_In.Processors
 
                 try
                 {
-                    startHeaderCell = (ExcelRange)cells[1, 1]; 
+                    startHeaderCell = (ExcelRange)cells[1, 1];
                     endHeaderCell = (ExcelRange)cells[1, 12];
-                    headerRange = worksheet.Range[startHeaderCell, endHeaderCell]; 
+                    headerRange = worksheet.Range[startHeaderCell, endHeaderCell];
                     headerRange.Value = headerData;
                 }
-                finally 
-                { 
-                    Helpers.ReleaseCom(ref startHeaderCell); 
-                    Helpers.ReleaseCom(ref endHeaderCell); 
+                finally
+                {
+                    Helpers.ReleaseCom(ref startHeaderCell);
+                    Helpers.ReleaseCom(ref endHeaderCell);
                 }
 
                 headerFont = headerRange.Font;
                 headerFont.Bold = true;
                 headerInterior = headerRange.Interior;
                 headerInterior.Color = ColorTranslator.ToOle(Color.LightGray);
-                headerBorders = headerRange.Borders; 
+                headerBorders = headerRange.Borders;
                 headerBorders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
 
                 object[,] excelData = new object[_data.Count, 12];
@@ -125,6 +138,7 @@ namespace SolidEdgeAdd_In.Processors
                      .ThenBy(item => item.Value.Name).ToList();
 
                 int lp = 1;
+
                 foreach (var item in sortedData)
                 {
                     string fileName = item.Value.Name;
@@ -140,20 +154,36 @@ namespace SolidEdgeAdd_In.Processors
 
                     object finalSizeX = "-";
                     string sizeX = item.Value.SizeX;
+
                     if (!string.IsNullOrEmpty(sizeX))
                     {
                         sizeX = sizeX.ToLower().Replace("mm", "").Replace(" ", "").Replace(".", ",").Trim();
-                        if (double.TryParse(sizeX, out double parsedX)) finalSizeX = parsedX; 
-                        else { finalSizeX = sizeX; }
+
+                        if (double.TryParse(sizeX, out double parsedX))
+                        {
+                            finalSizeX = parsedX;
+                        }
+                        else
+                        {
+                            finalSizeX = sizeX;
+                        }
                     }
 
                     object finalSizeY = "-";
                     string sizeY = item.Value.SizeY;
+
                     if (!string.IsNullOrEmpty(sizeY))
                     {
                         sizeY = sizeY.ToLower().Replace("mm", "").Replace(" ", "").Replace(".", ",").Trim();
-                        if (double.TryParse(sizeY, out double parsedY)) finalSizeY = parsedY; 
-                        else { finalSizeY = sizeY; }
+
+                        if (double.TryParse(sizeY, out double parsedY))
+                        {
+                            finalSizeY = parsedY;
+                        }
+                        else
+                        {
+                            finalSizeY = sizeY;
+                        }
                     }
 
                     string color = string.IsNullOrEmpty(item.Value.Color) ? "-" : item.Value.Color;
@@ -171,32 +201,38 @@ namespace SolidEdgeAdd_In.Processors
                         isOpen = true;
 
                         if (document is SePart part)
-                        { 
-                            models = part.Models;
-                            flatPatterns = part.FlatPatternModels; 
-                        }
-                        else if (document is SeSheetMetal sheetMetal) 
                         {
-                            models = sheetMetal.Models; 
-                            flatPatterns = sheetMetal.FlatPatternModels; 
+                            models = part.Models;
+                            flatPatterns = part.FlatPatternModels;
+                        }
+                        else if (document is SeSheetMetal sheetMetal)
+                        {
+                            models = sheetMetal.Models;
+                            flatPatterns = sheetMetal.FlatPatternModels;
                         }
 
-                        if (flatPatterns == null || models == null || flatPatterns.Count == 0 || models.Count == 0) 
-                        { 
-                            _logger.LogSkip(fileName, "Missing flat pattern."); 
-                            continue; 
+                        if (flatPatterns == null || models == null || flatPatterns.Count == 0 || models.Count == 0)
+                        {
+                            _logger.LogSkip(fileName, "Missing flat pattern.");
+                            continue;
                         }
 
                         model = models.Item(1);
                         flanges = model.Flanges;
 
-                        if (flanges.Count != 0) flangesValue = flanges.Count.ToString(); 
+                        if (flanges.Count != 0)
+                        {
+                            flangesValue = flanges.Count.ToString();
+                        }
 
                         if (needGenerationDxf)
                         {
-                            if (File.Exists(subDxfPath)) File.Delete(subDxfPath);
+                            if (File.Exists(subDxfPath))
+                            {
+                                File.Delete(subDxfPath);
+                            }
 
-                            using var properties = new PropertyUtils(document);
+                            using PropertyUtils properties = new (document);
                             properties.UpdateDxfDate();
                             dxfDate = properties.DxfDate;
                             models.SaveAsFlatDXFEx(subDxfPath, null, null, null, true);
@@ -204,8 +240,8 @@ namespace SolidEdgeAdd_In.Processors
                             _logger.LogSuccess($"{fileName} - Created new flat pattern Dxf.");
                         }
                         else
-                        { 
-                            _logger.LogSuccess($"{fileName} - File has Dxf property."); 
+                        {
+                            _logger.LogSuccess($"{fileName} - File has Dxf property.");
                         }
 
                         if (File.Exists(subDxfPath))
@@ -229,22 +265,31 @@ namespace SolidEdgeAdd_In.Processors
                         }
                         else
                         {
-                            _logger.LogError(fileName, "File has Dxf property, but file not found."); 
+                            _logger.LogError(fileName, "File has Dxf property, but file not found.");
                         }
                     }
-                    catch (Exception ex) 
-                    { 
+                    catch (Exception ex)
+                    {
                         _logger.LogError(fileName, $"Error: {ex.Message}");
-                        continue; 
+                        continue;
                     }
                     finally
                     {
-                        Helpers.ReleaseCom(ref flanges); 
+                        Helpers.ReleaseCom(ref flanges);
                         Helpers.ReleaseCom(ref model);
-                        Helpers.ReleaseCom(ref flatPatterns); 
+                        Helpers.ReleaseCom(ref flatPatterns);
                         Helpers.ReleaseCom(ref models);
 
-                        if (isOpen) document?.Close(true); 
+                        if (isOpen)
+                        {
+                            try
+                            {
+                                document?.Close(false);
+                            }
+                            catch
+                            {
+                            }
+                        }
 
                         Helpers.ReleaseCom(ref document);
                     }
@@ -255,6 +300,7 @@ namespace SolidEdgeAdd_In.Processors
                     ExcelRange startCell = null;
                     ExcelRange endCell = null;
                     ExcelRange writeRange = null;
+
                     try
                     {
                         startCell = (ExcelRange)cells[2, 1];
@@ -262,11 +308,11 @@ namespace SolidEdgeAdd_In.Processors
                         writeRange = worksheet.Range[startCell, endCell];
                         writeRange.Value = excelData;
                     }
-                    finally 
+                    finally
                     {
-                        Helpers.ReleaseCom(ref writeRange); 
+                        Helpers.ReleaseCom(ref writeRange);
                         Helpers.ReleaseCom(ref endCell);
-                        Helpers.ReleaseCom(ref startCell); 
+                        Helpers.ReleaseCom(ref startCell);
                     }
                 }
 
@@ -279,7 +325,12 @@ namespace SolidEdgeAdd_In.Processors
                 usedBorders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
 
                 string excelFilePath = Path.Combine(_targetDirectory, "DXF_Summary.xlsx");
-                if (File.Exists(excelFilePath)) File.Delete(excelFilePath); 
+
+                if (File.Exists(excelFilePath))
+                {
+                    File.Delete(excelFilePath);
+                }
+
                 workbook.SaveAs(excelFilePath);
             }
             finally
@@ -287,20 +338,34 @@ namespace SolidEdgeAdd_In.Processors
                 _logger.SaveReport(_targetDirectory);
                 Helpers.ReleaseCom(ref usedBorders);
                 Helpers.ReleaseCom(ref headerBorders);
-                Helpers.ReleaseCom(ref headerInterior); 
+                Helpers.ReleaseCom(ref headerInterior);
                 Helpers.ReleaseCom(ref headerFont);
                 Helpers.ReleaseCom(ref cells);
                 Helpers.ReleaseCom(ref columns);
-                Helpers.ReleaseCom(ref usedRange); 
+                Helpers.ReleaseCom(ref usedRange);
                 Helpers.ReleaseCom(ref headerRange);
-                Helpers.ReleaseCom(ref worksheet); 
+                Helpers.ReleaseCom(ref worksheet);
                 Helpers.ReleaseCom(ref xlSheets);
 
-                workbook?.Close(false); 
-                Helpers.ReleaseCom(ref workbook); 
+                try
+                {
+                    workbook?.Close(false);
+                }
+                catch
+                {
+                }
+
+                Helpers.ReleaseCom(ref workbook);
                 Helpers.ReleaseCom(ref workbooks);
 
-                excelApp?.Quit(); 
+                try
+                {
+                    excelApp?.Quit();
+                }
+                catch
+                {
+                }
+
                 Helpers.ReleaseCom(ref excelApp);
             }
         }
@@ -308,18 +373,23 @@ namespace SolidEdgeAdd_In.Processors
         private bool IsLoaded_Data()
         {
             SeOccurrences occurrences = null;
+
             try
             {
                 occurrences = _assembly.Occurrences;
                 DataUtils.BuildDataForExportDxfs(occurrences, _data, _logger);
             }
-            finally 
-            { 
-                Helpers.ReleaseCom(ref occurrences); 
+            finally
+            {
+                Helpers.ReleaseCom(ref occurrences);
             }
 
             _dataCount = _data.Count;
-            if (!Helpers.IsMessageAccepted($"Liczba blach w złożeniu: {_dataCount}.")) return false;
+
+            if (!Helpers.IsMessageAccepted($"Liczba blach w złożeniu: {_dataCount}."))
+            {
+                return false;
+            }
 
             return true;
         }
@@ -327,39 +397,45 @@ namespace SolidEdgeAdd_In.Processors
         private bool IsLoaded_Multiplier()
         {
             SeDocument document = (SeDocument)_assembly;
-            using PropertyUtils properties = new (document);
+            using PropertyUtils properties = new PropertyUtils(document);
             int count = properties.Count;
 
             if (count == 0)
             {
                 (bool isConfirmed, int multiplier) = DialogUtils.GetMultiplier();
-                if (isConfirmed) 
-                { 
-                    properties.Count = multiplier; 
-                    _multiplier = multiplier; 
-                    return true; 
+
+                if (isConfirmed)
+                {
+                    properties.Count = multiplier;
+                    _multiplier = multiplier;
+                    return true;
                 }
+
                 return false;
             }
 
             _multiplier = count;
-            if (!Helpers.IsMessageAccepted($"Przyjęto mnożnik: {_multiplier}.")) return false;
+
+            if (!Helpers.IsMessageAccepted($"Przyjęto mnożnik: {_multiplier}."))
+            {
+                return false;
+            }
 
             return true;
         }
 
-        
         private bool IsLoaded_TargetDirectory()
         {
             string number = _assemblyName.Length >= 4 ? _assemblyName.Substring(0, 4) : _assemblyName;
             string date = DateTime.Now.ToString("yyyy-MM-dd");
 
             string packagesDirectory = Path.Combine(_projectDirectory, Constants.Folders.Packages);
-            Directory.CreateDirectory(packagesDirectory); 
+            Directory.CreateDirectory(packagesDirectory);
 
             _targetDirectory = Path.Combine(packagesDirectory, $"{number}_{date}");
-            Directory.CreateDirectory(_targetDirectory); 
+            Directory.CreateDirectory(_targetDirectory);
+
             return true;
-        }  
+        }
     }
 }

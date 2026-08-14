@@ -4,10 +4,10 @@ namespace SolidEdgeAdd_In.Processors
 {
     public class ExportPartsListProcessor
     {
-        private readonly SeAssembly _assembly; 
-        private readonly SeApp _application; 
+        private readonly SeAssembly _assembly;
+        private readonly SeApp _application;
 
-        private string _assemblyPath; 
+        private string _assemblyPath;
         private string _assemblyName;
         private string _projectDirectory;
 
@@ -24,11 +24,11 @@ namespace SolidEdgeAdd_In.Processors
 
         public ExportPartsListProcessor(SeAssembly assembly)
         {
-            _assembly = assembly; 
+            _assembly = assembly;
             _application = _assembly.Application;
 
             _data = new Dictionary<string, FileData>();
-            _thumbnails = new List<(string FileName, string Path)>();     
+            _thumbnails = new List<(string FileName, string Path)>();
         }
 
         public bool Initialize()
@@ -37,12 +37,35 @@ namespace SolidEdgeAdd_In.Processors
             _assemblyName = Path.GetFileNameWithoutExtension(_assemblyPath);
             _projectDirectory = Path.GetDirectoryName(_assemblyPath);
 
-            if (!IsLoaded_Data()) return false;
-            if (!IsLoaded_Thumbnails()) return false;
-            if (!IsLoaded_GeneratingThumbnails()) return false;
-            if (!IsLoaded_Multiplier()) return false;
-            if (!IsLoaded_TargetDirectory()) return false;
-            if (!IsLoaded_PartsList()) return false;
+            if (!IsLoaded_Data())
+            {
+                return false;
+            }
+
+            if (!IsLoaded_Thumbnails())
+            {
+                return false;
+            }
+
+            if (!IsLoaded_GeneratingThumbnails())
+            {
+                return false;
+            }
+
+            if (!IsLoaded_Multiplier())
+            {
+                return false;
+            }
+
+            if (!IsLoaded_TargetDirectory())
+            {
+                return false;
+            }
+
+            if (!IsLoaded_PartsList())
+            {
+                return false;
+            }
 
             return true;
         }
@@ -50,24 +73,27 @@ namespace SolidEdgeAdd_In.Processors
         public void Process()
         {
             ExcelApp excelApp = null;
-            ExcelWorkbooks workbooks = null; ExcelWorkbook workbook = null;
+            ExcelWorkbooks workbooks = null;
+            ExcelWorkbook workbook = null;
             ExcelSheets sheets = null;
             ExcelWorksheet worksheet = null;
 
             try
             {
                 excelApp = new ExcelApp
-                { 
-                    Visible = false, 
+                {
+                    Visible = false,
                     DisplayAlerts = false,
-                    AskToUpdateLinks = false, 
-                    EnableEvents = false 
+                    AskToUpdateLinks = false,
+                    EnableEvents = false
                 };
 
-                workbooks = excelApp.Workbooks; workbook = workbooks.Add();
+                workbooks = excelApp.Workbooks;
+                workbook = workbooks.Add();
                 excelApp.Calculation = Microsoft.Office.Interop.Excel.XlCalculation.xlCalculationManual;
                 sheets = workbook.Sheets;
-                worksheet = (ExcelWorksheet)sheets[1]; worksheet.Paste();
+                worksheet = (ExcelWorksheet)sheets[1];
+                worksheet.Paste();
 
                 EditWorksheet(workbook, worksheet);
 
@@ -75,18 +101,28 @@ namespace SolidEdgeAdd_In.Processors
             }
             finally
             {
-                Helpers.ReleaseCom(ref worksheet); Helpers.ReleaseCom(ref sheets);
-                Helpers.ReleaseCom(ref workbook); Helpers.ReleaseCom(ref workbooks);
-                excelApp?.Quit();
+                Helpers.ReleaseCom(ref worksheet);
+                Helpers.ReleaseCom(ref sheets);
+                Helpers.ReleaseCom(ref workbook);
+                Helpers.ReleaseCom(ref workbooks);
+
+                try
+                {
+                    excelApp?.Quit();
+                }
+                catch
+                {
+                }
+
                 Helpers.ReleaseCom(ref excelApp);
             }
-            
         }
 
         private void EditWorksheet(ExcelWorkbook workbook, ExcelWorksheet worksheet)
         {
             ExcelRange usedRange = null;
-            ExcelRange startCell = null; ExcelRange endCell = null;
+            ExcelRange startCell = null;
+            ExcelRange endCell = null;
             ExcelRange expandedRange = null;
 
             try
@@ -126,8 +162,10 @@ namespace SolidEdgeAdd_In.Processors
             }
             finally
             {
-                Helpers.ReleaseCom(ref expandedRange); Helpers.ReleaseCom(ref endCell);
-                Helpers.ReleaseCom(ref startCell); Helpers.ReleaseCom(ref usedRange);
+                Helpers.ReleaseCom(ref expandedRange);
+                Helpers.ReleaseCom(ref endCell);
+                Helpers.ReleaseCom(ref startCell);
+                Helpers.ReleaseCom(ref usedRange);
             }
         }
 
@@ -135,7 +173,10 @@ namespace SolidEdgeAdd_In.Processors
         {
             string partsListPath = Path.Combine(_targetDirectory, $"{_assemblyName}_PartsList.xlsx");
 
-            if (File.Exists(partsListPath)) File.Delete(partsListPath); 
+            if (File.Exists(partsListPath))
+            {
+                File.Delete(partsListPath);
+            }
 
             workbook?.SaveAs(partsListPath);
         }
@@ -143,32 +184,48 @@ namespace SolidEdgeAdd_In.Processors
         private bool IsLoaded_Data()
         {
             SeOccurrences occurrences = null;
+
             try
             {
                 occurrences = _assembly.Occurrences;
                 DataUtils.BuildDataForExportPartsList(occurrences, _data);
             }
-            finally { Helpers.ReleaseCom(ref occurrences); }
+            finally
+            {
+                Helpers.ReleaseCom(ref occurrences);
+            }
 
             _dataCount = _data.Count;
-            if (!Helpers.IsMessageAccepted($"Liczba plików w złożeniu: {_dataCount}.")) return false;
+
+            if (!Helpers.IsMessageAccepted($"Liczba plików w złożeniu: {_dataCount}."))
+            {
+                return false;
+            }
 
             return true;
         }
 
         private bool IsLoaded_Thumbnails()
         {
-            _thumbnailsDirectory = Path.Combine(_projectDirectory, Constants.Folders.Thumbnails); Directory.CreateDirectory(_thumbnailsDirectory);
+            _thumbnailsDirectory = Path.Combine(_projectDirectory, Constants.Folders.Thumbnails);
+            Directory.CreateDirectory(_thumbnailsDirectory);
 
             _thumbnails = Directory.GetFiles(_thumbnailsDirectory, "*.jpg", SearchOption.TopDirectoryOnly)
                                .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
 
             _thumbnailsCount = _thumbnails.Count;
-            if (!Helpers.IsMessageAccepted($"Liczba miniatur w folderze Miniatury: {_thumbnailsCount}.")) return false;
 
-            if (_thumbnailsCount < _dataCount) 
-            { 
-                if (!Helpers.IsMessageAccepted($"W folderze Miniatury jest mniej miniatur niż plików w złożeniu.")) return false; 
+            if (!Helpers.IsMessageAccepted($"Liczba miniatur w folderze Miniatury: {_thumbnailsCount}."))
+            {
+                return false;
+            }
+
+            if (_thumbnailsCount < _dataCount)
+            {
+                if (!Helpers.IsMessageAccepted($"W folderze Miniatury jest mniej miniatur niż plików w złożeniu."))
+                {
+                    return false;
+                }
             }
 
             _isGenerateThumbnails = DialogUtils.IsGenerateThumbnails();
@@ -178,60 +235,49 @@ namespace SolidEdgeAdd_In.Processors
 
         private bool IsLoaded_GeneratingThumbnails()
         {
-            if (!_isGenerateThumbnails) return true;
+            if (!_isGenerateThumbnails)
+            {
+                return true;
+            }
 
-            SeDocument document = null;
-            SeWindow window = null;
             foreach (var item in _data)
             {
                 try
                 {
-                    document = Helpers.GetOpenDocument(_application, item.Key);
-                    window = _application.ActiveWindow as SeWindow;
-
+                    string sourceFilePath = item.Key;
                     string thumbnailPath = Path.Combine(_thumbnailsDirectory, item.Value.Name + ".jpg");
-                    if (File.Exists(thumbnailPath)) continue; 
 
-                    if (document is SePart part)
+                    if (File.Exists(thumbnailPath))
                     {
-                        Helpers.ManageNonModelElementsInPart(part, false);
-                        ReportUtils.SaveThumbnail(thumbnailPath, window);
-                        Helpers.ManageNonModelElementsInPart(part, true);
-                    }
-                    else if (document is SeAssembly assembly)
-                    {
-                        Helpers.ManageNonModelElementsInAssembly(assembly, false);
-                        ReportUtils.SaveThumbnail(thumbnailPath, window);
-                        Helpers.ManageNonModelElementsInAssembly(assembly, true);
-                    }
-                    else if (document is SeSheetMetal sheetMetal)
-                    {
-                        Helpers.ManageNonModelElementsInSheetMetal(sheetMetal, false);
-                        ReportUtils.SaveThumbnail(thumbnailPath, window);
-                        Helpers.ManageNonModelElementsInSheetMetal(sheetMetal, true);
+                        continue;
                     }
 
-                    if (File.Exists(thumbnailPath)) _thumbnails.Add((item.Value.Name, thumbnailPath));
+                    ReportUtils.ExtractAndSaveThumbnail(sourceFilePath, thumbnailPath, 256);
 
+                    if (File.Exists(thumbnailPath))
+                    {
+                        _thumbnails.Add((item.Value.Name, thumbnailPath));
+                    }
                 }
-                catch { continue; }
-                finally
+                catch
                 {
-                    Helpers.ReleaseCom(ref window);
-                    try { document?.Close(false); } catch { }
-                    Helpers.ReleaseCom(ref document);
-
-                    System.Windows.Forms.Application.DoEvents();
-                    _application.DoIdle();
-                }         
+                    continue;
+                }
             }
 
             _thumbnailsCount = _thumbnails.Count;
-            if (!Helpers.IsMessageAccepted($"Liczba miniatur w folderze Miniatury: {_thumbnailsCount}.")) return false;
+
+            if (!Helpers.IsMessageAccepted($"Liczba miniatur w folderze Miniatury: {_thumbnailsCount}."))
+            {
+                return false;
+            }
 
             if (_thumbnailsCount < _dataCount)
             {
-                if (!Helpers.IsMessageAccepted($"W folderze Miniatury jest mniej miniatur niż plików w złożeniu.")) return false;
+                if (!Helpers.IsMessageAccepted($"W folderze Miniatury jest mniej miniatur niż plików w złożeniu."))
+                {
+                    return false;
+                }
             }
 
             return true;
@@ -240,38 +286,52 @@ namespace SolidEdgeAdd_In.Processors
         private bool IsLoaded_Multiplier()
         {
             SeDocument document = (SeDocument)_assembly;
-            using PropertyUtils properties = new(document);
+            using PropertyUtils properties = new PropertyUtils(document);
             int count = properties.Count;
 
             if (count == 0)
             {
                 (bool isConfirmed, int multiplier) = DialogUtils.GetMultiplier();
+
                 if (isConfirmed)
                 {
                     properties.Count = multiplier;
                     _multiplier = multiplier;
                     return true;
                 }
+
                 return false;
             }
 
             _multiplier = count;
-            if (!Helpers.IsMessageAccepted($"Przyjęto mnożnik: {_multiplier}.")) return false;
+
+            if (!Helpers.IsMessageAccepted($"Przyjęto mnożnik: {_multiplier}."))
+            {
+                return false;
+            }
 
             return true;
         }
 
         private bool IsLoaded_TargetDirectory()
         {
-             _targetDirectory = Path.Combine(_projectDirectory, Constants.Folders.Lists); Directory.CreateDirectory(_targetDirectory);
-    
-             return true;
+            _targetDirectory = Path.Combine(_projectDirectory, Constants.Folders.Lists);
+            Directory.CreateDirectory(_targetDirectory);
+
+            return true;
         }
 
         private bool IsLoaded_PartsList()
         {
-            try { ReportUtils.CopyPartsList(_application, _assemblyPath); }
-            catch { return false; }
+            try
+            {
+                ReportUtils.CopyPartsList(_application, _assemblyPath);
+            }
+            catch
+            {
+                return false;
+            }
+
             return true;
         }
     }

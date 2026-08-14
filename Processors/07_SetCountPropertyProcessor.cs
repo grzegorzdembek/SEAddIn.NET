@@ -22,9 +22,15 @@ namespace SolidEdgeAdd_In.Processors
 
         public bool Initialize()
         {
-            if (!IsLoaded_Data()) return false;
+            if (!IsLoaded_Data())
+            {
+                return false;
+            }
 
-            if (!IsLoaded_Multiplier()) return false;
+            if (!IsLoaded_Multiplier())
+            {
+                return false;
+            }
 
             return true;
         }
@@ -37,11 +43,18 @@ namespace SolidEdgeAdd_In.Processors
             string M = _multiplier.ToString("D3");
             int missFiles = 0;
 
-            HashSet<string> processedPaths = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> processedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             SeOccurrences occurrences = null;
 
-            try { occurrences = _assembly.Occurrences; DataUtils.ApplyCounts(occurrences, _data, _multiplier, processedPaths); }
-            finally { Helpers.ReleaseCom(ref occurrences); }
+            try
+            {
+                occurrences = _assembly.Occurrences;
+                DataUtils.ApplyCounts(occurrences, _data, _multiplier, processedPaths);
+            }
+            finally
+            {
+                Helpers.ReleaseCom(ref occurrences);
+            }
 
             foreach (var item in _data)
             {
@@ -61,9 +74,9 @@ namespace SolidEdgeAdd_In.Processors
                         continue;
                     }
 
-                    string P = count.ToString("D3"); 
-                    string C = occurrenceCount.ToString("D3"); 
-                    string MC = targetCount.ToString("D3"); 
+                    string P = count.ToString("D3");
+                    string C = occurrenceCount.ToString("D3");
+                    string MC = targetCount.ToString("D3");
 
                     _feedback.AppendLine($"{name,-30} | {type} | {P} | {M} | {C} | {MC} |");
                 }
@@ -71,14 +84,28 @@ namespace SolidEdgeAdd_In.Processors
                 {
                     missFiles++;
                     string errorFileName = "Unknown file";
-                    try { errorFileName = item.Value.Name ?? Path.GetFileNameWithoutExtension(item.Key); } catch { }
+
+                    try
+                    {
+                        errorFileName = item.Value.Name ?? Path.GetFileNameWithoutExtension(item.Key);
+                    }
+                    catch
+                    {
+                    }
+
                     _feedback.AppendLine($"{errorFileName,-30} | --- | --- | --- | --- | --- | --- |");
                     continue;
                 }
             }
 
-            if (missFiles == 0) { _feedback.AppendLine($"Successfully added property - Count for all files."); }
-            else { _feedback.AppendLine($"Skipped {missFiles} files."); }
+            if (missFiles == 0)
+            {
+                _feedback.AppendLine($"Successfully added property - Count for all files.");
+            }
+            else
+            {
+                _feedback.AppendLine($"Skipped {missFiles} files.");
+            }
 
             DisplayFeedback();
         }
@@ -86,15 +113,23 @@ namespace SolidEdgeAdd_In.Processors
         private bool IsLoaded_Data()
         {
             SeOccurrences occurrences = null;
+
             try
             {
                 occurrences = _assembly.Occurrences;
                 DataUtils.BuildDataForSetCountProperty(occurrences, _data);
             }
-            finally { Helpers.ReleaseCom(ref occurrences); }
+            finally
+            {
+                Helpers.ReleaseCom(ref occurrences);
+            }
 
             _dataCount = _data.Count;
-            if (!Helpers.IsMessageAccepted($"Files {_dataCount}.")) return false;
+
+            if (!Helpers.IsMessageAccepted($"Files {_dataCount}."))
+            {
+                return false;
+            }
 
             return true;
         }
@@ -102,30 +137,36 @@ namespace SolidEdgeAdd_In.Processors
         private bool IsLoaded_Multiplier()
         {
             SeDocument document = (SeDocument)_assembly;
-            using PropertyUtils properties = new(document);
+            using PropertyUtils properties = new PropertyUtils(document);
             int count = properties.Count;
 
             if (count == 0)
             {
                 (bool isConfirmed, int multiplier) = DialogUtils.GetMultiplier();
+
                 if (isConfirmed)
                 {
                     properties.Count = multiplier;
                     _multiplier = multiplier;
                     return true;
                 }
+
                 return false;
             }
 
             _multiplier = count;
-            if (!Helpers.IsMessageAccepted($"Multiplier {_multiplier}.")) return false;
+
+            if (!Helpers.IsMessageAccepted($"Multiplier {_multiplier}."))
+            {
+                return false;
+            }
 
             return true;
         }
 
         private void DisplayFeedback()
         {
-            using Form form = new()
+            using Form form = new Form
             {
                 Text = "Feedback",
                 Width = 700,
@@ -133,7 +174,7 @@ namespace SolidEdgeAdd_In.Processors
                 StartPosition = FormStartPosition.CenterScreen
             };
 
-            TextBox textBox = new()
+            TextBox textBox = new TextBox
             {
                 Multiline = true,
                 ReadOnly = true,

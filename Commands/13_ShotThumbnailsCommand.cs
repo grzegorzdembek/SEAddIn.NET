@@ -1,17 +1,17 @@
 ﻿using SolidEdgeAdd_In.Processors;
-// Tenth Command
 
 namespace SolidEdgeAdd_In.Commands
 {
-    public class OrganiseDrawingsCommand
+    public class ShotThumbnailsCommand
     {
         public static void Execute(SeAssembly assembly)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
             try
             {
-                Stopwatch stopwatch = Stopwatch.StartNew();
+                ShotThumbnailsProcessor processor = new (assembly);
 
-                OrganiseDrawingsProcessor processor = new (assembly);
                 if (processor.Initialize())
                 {
                     processor.Process();
@@ -23,8 +23,8 @@ namespace SolidEdgeAdd_In.Commands
                 MessageBox.Show($"Execution time: {elapsedTime}.");
             }
             catch (Exception ex)
-            { 
-                MessageBox.Show($"Exception: {ex.Message}."); 
+            {
+                MessageBox.Show($"Exception: {ex.Message}.");
             }
         }
     }

@@ -15,8 +15,15 @@ namespace SolidEdgeAdd_In.Utils
 
                 return Enumerable.Range(1, rowData.GetLength(1)).FirstOrDefault(i => rowData[1, i]?.ToString() == columnName);
             }
-            catch { return 0; }
-            finally { Helpers.ReleaseCom(ref firstRow); Helpers.ReleaseCom(ref rows); }
+            catch
+            {
+                return 0;
+            }
+            finally
+            {
+                Helpers.ReleaseCom(ref firstRow);
+                Helpers.ReleaseCom(ref rows);
+            }
         }
 
         public static void ProcessDataInMemory(object[,] data, int typeColIdx, int fileNameColIdx, int countColIdx, int dxfColIdx, int rowCount, int multiplier, Dictionary<string, FileData> occurrencesData)
@@ -25,18 +32,40 @@ namespace SolidEdgeAdd_In.Utils
 
             for (int i = 2; i <= rowCount; i++)
             {
-                if (data[i, typeColIdx] == null || data[i, fileNameColIdx] == null) continue;
+                if (data[i, typeColIdx] == null || data[i, fileNameColIdx] == null)
+                {
+                    continue;
+                }
 
                 string rawType = data[i, typeColIdx].ToString().Trim();
                 string fileName = data[i, fileNameColIdx].ToString().Trim();
 
                 string mappedType = rawType;
-                if (rawType == Constants.PartTypes.Assembly) mappedType = Constants.Styles.Assembly;
-                else if (rawType == Constants.PartTypes.Part) mappedType = Constants.Styles.Part;
-                else if (rawType == Constants.PartTypes.Steelmaking) mappedType = Constants.Styles.Steelmaking;
-                else if (rawType == Constants.PartTypes.Commercial) mappedType = Constants.Styles.Commercial;
-                else if (rawType == Constants.PartTypes.Standard) mappedType = Constants.Styles.Standard;
-                else if (rawType == Constants.PartTypes.SheetMetal) mappedType = Constants.Styles.SheetMetal;
+
+                if (rawType == Constants.PartTypes.Assembly)
+                {
+                    mappedType = Constants.Styles.Assembly;
+                }
+                else if (rawType == Constants.PartTypes.Part)
+                {
+                    mappedType = Constants.Styles.Part;
+                }
+                else if (rawType == Constants.PartTypes.Steelmaking)
+                {
+                    mappedType = Constants.Styles.Steelmaking;
+                }
+                else if (rawType == Constants.PartTypes.Commercial)
+                {
+                    mappedType = Constants.Styles.Commercial;
+                }
+                else if (rawType == Constants.PartTypes.Standard)
+                {
+                    mappedType = Constants.Styles.Standard;
+                }
+                else if (rawType == Constants.PartTypes.SheetMetal)
+                {
+                    mappedType = Constants.Styles.SheetMetal;
+                }
 
                 data[i, typeColIdx] = mappedType;
 
@@ -135,7 +164,10 @@ namespace SolidEdgeAdd_In.Utils
                 int lastRow = range.Rows.Count;
                 int lastCol = range.Columns.Count;
 
-                if (lastRow < 2) { return; }
+                if (lastRow < 2)
+                {
+                    return;
+                }
 
                 dataRange = range.Range[range.Cells[2, 1], range.Cells[lastRow, lastCol]];
                 columns = range.Columns;
@@ -200,10 +232,14 @@ namespace SolidEdgeAdd_In.Utils
             }
             finally
             {
-                Helpers.ReleaseCom(ref font); Helpers.ReleaseCom(ref interior);
-                Helpers.ReleaseCom(ref borders); Helpers.ReleaseCom(ref cells);
-                Helpers.ReleaseCom(ref firstRow); Helpers.ReleaseCom(ref columns);
-                Helpers.ReleaseCom(ref rows); Helpers.ReleaseCom(ref range);
+                Helpers.ReleaseCom(ref font);
+                Helpers.ReleaseCom(ref interior);
+                Helpers.ReleaseCom(ref borders);
+                Helpers.ReleaseCom(ref cells);
+                Helpers.ReleaseCom(ref firstRow);
+                Helpers.ReleaseCom(ref columns);
+                Helpers.ReleaseCom(ref rows);
+                Helpers.ReleaseCom(ref range);
             }
         }
 
@@ -211,6 +247,7 @@ namespace SolidEdgeAdd_In.Utils
         {
             ExcelFormatCondition rule = null;
             dynamic interior = null;
+
             try
             {
                 string formula = $"={address}=\"{criteria}\"";
@@ -220,7 +257,11 @@ namespace SolidEdgeAdd_In.Utils
                 interior.Color = ColorTranslator.ToOle(color);
                 rule.StopIfTrue = false;
             }
-            finally { Helpers.ReleaseCom(ref interior); Helpers.ReleaseCom(ref rule); }
+            finally
+            {
+                Helpers.ReleaseCom(ref interior);
+                Helpers.ReleaseCom(ref rule);
+            }
         }
     }
 }

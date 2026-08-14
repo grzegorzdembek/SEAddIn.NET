@@ -12,7 +12,10 @@ namespace SolidEdgeAdd_In.Commands
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
                 SaveAsStepProcessor processor = new (document);
-                if (processor.Initialize()) processor.Process(); 
+                if (processor.Initialize())
+                {
+                    processor.Process();
+                }
 
                 stopwatch.Stop();
                 string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff");

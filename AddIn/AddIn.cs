@@ -115,7 +115,6 @@ namespace SolidEdgeAdd_In
         [ComRegisterFunction]
         static void RegisterServer(Type t)
         {
-            // Zastosowanie using var załatwia automatyczne zamykanie klucza po zakończeniu rejestracji
             using var baseKey = Registry.ClassesRoot.CreateSubKey($@"CLSID\{{{t.GUID}}}");
 
             if (baseKey != null)

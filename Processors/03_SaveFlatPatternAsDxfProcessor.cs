@@ -20,9 +20,22 @@ namespace SolidEdgeAdd_In.Processors
         public bool Initialize()
         {
             _documentPath = _document.FullName;
-            if (string.IsNullOrEmpty(_documentPath)) { MessageBox.Show("Save the file first to export flat pattern."); return false; }
 
-            try { _document.Save(); } catch { MessageBox.Show("Cannot update document."); return false; }
+            if (string.IsNullOrEmpty(_documentPath))
+            {
+                MessageBox.Show("Save the file first to export flat pattern.");
+                return false;
+            }
+
+            try
+            {
+                _document.Save();
+            }
+            catch
+            {
+                MessageBox.Show("Cannot update document.");
+                return false;
+            }
 
             _projectDirectory = Path.GetDirectoryName(_documentPath);
             _documentName = Path.GetFileNameWithoutExtension(_documentPath);
@@ -33,7 +46,11 @@ namespace SolidEdgeAdd_In.Processors
             string dxfPath = Path.Combine(_projectDirectory, dxfName);
 
             (bool isConfirmed, string editedPath) = DialogUtils.GetEditedPath(dxfPath);
-            if (!isConfirmed || string.IsNullOrEmpty(editedPath)) { return false; }
+
+            if (!isConfirmed || string.IsNullOrEmpty(editedPath))
+            {
+                return false;
+            }
 
             _dxfPath = editedPath;
 
@@ -47,8 +64,16 @@ namespace SolidEdgeAdd_In.Processors
 
             try
             {
-                if (_document is SePart part) { models = part.Models; flatPatterns = part.FlatPatternModels; }
-                else if (_document is SeSheetMetal sheetMetal) { models = sheetMetal.Models; flatPatterns = sheetMetal.FlatPatternModels; }
+                if (_document is SePart part)
+                {
+                    models = part.Models;
+                    flatPatterns = part.FlatPatternModels;
+                }
+                else if (_document is SeSheetMetal sheetMetal)
+                {
+                    models = sheetMetal.Models;
+                    flatPatterns = sheetMetal.FlatPatternModels;
+                }
 
                 if (flatPatterns == null || models == null || flatPatterns.Count == 0 || models.Count == 0)
                 {
@@ -62,7 +87,11 @@ namespace SolidEdgeAdd_In.Processors
                     _document.Save();
                 }
             }
-            finally { Helpers.ReleaseCom(ref flatPatterns); Helpers.ReleaseCom(ref models); }
+            finally
+            {
+                Helpers.ReleaseCom(ref flatPatterns);
+                Helpers.ReleaseCom(ref models);
+            }
         }
     }
 }

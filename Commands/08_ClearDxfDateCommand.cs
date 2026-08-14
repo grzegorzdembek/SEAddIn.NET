@@ -13,7 +13,10 @@ namespace SolidEdgeAdd_In.Commands
             try
             {
                 ClearDxfDateProcessor processor = new (assembly);
-                processor.Process();
+                if (processor.Initialize())
+                {
+                    processor.Process();
+                }
 
                 stopwatch.Stop();
                 string elapsedTime = stopwatch.Elapsed.ToString(@"mm\:ss\.fff");

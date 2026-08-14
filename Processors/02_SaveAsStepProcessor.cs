@@ -14,26 +14,43 @@ namespace SolidEdgeAdd_In.Processors
 
         public SaveAsStepProcessor(SeDocument document)
         {
-            _document = document;      
+            _document = document;
         }
 
         public bool Initialize()
         {
             _documentPath = _document.FullName;
-            if (string.IsNullOrEmpty(_documentPath)) { MessageBox.Show("Save the file first to export STEP format."); return false; }
 
-            try { _document.Save(); } catch { MessageBox.Show("Cannot update document."); return false; }
+            if (string.IsNullOrEmpty(_documentPath))
+            {
+                MessageBox.Show("Save the file first to export STEP format.");
+                return false;
+            }
+
+            try
+            {
+                _document.Save();
+            }
+            catch
+            {
+                MessageBox.Show("Cannot update document.");
+                return false;
+            }
 
             _projectDirectory = Path.GetDirectoryName(_documentPath);
             _documentName = Path.GetFileNameWithoutExtension(_documentPath);
-            
+
             using PropertyUtils properties = new (_document);
 
             string stepName = $"{properties.MaterialName}_{properties.Count}szt_{properties.Material}_{_documentName}.step";
             string stepPath = Path.Combine(_projectDirectory, stepName);
 
             (bool isConfirmed, string editedPath) = DialogUtils.GetEditedPath(stepPath);
-            if (!isConfirmed || string.IsNullOrEmpty(editedPath)) { return false; }
+
+            if (!isConfirmed || string.IsNullOrEmpty(editedPath))
+            {
+                return false;
+            }
 
             _stepPath = editedPath;
 

@@ -16,15 +16,46 @@ namespace SolidEdgeAdd_In.Utils
                 StartPosition = FormStartPosition.CenterScreen
             };
 
-            Label label = new() { Left = 20, Top = 20, Width = 740, Text = "Wygenerowana scieżka (do edycji):" };
-            TextBox textBox = new() { Left = 20, Top = 50, Width = 740, Text = filePath };
+            Label label = new()
+            {
+                Left = 20,
+                Top = 20,
+                Width = 740,
+                Text = "Wygenerowana scieżka (do edycji):"
+            };
 
-            Button yesButton = new() { Text = "Tak", Left = 550, Width = 100, Top = 100, DialogResult = DialogResult.Yes };
-            Button noButton = new() { Text = "Nie", Left = 660, Width = 100, Top = 100, DialogResult = DialogResult.No };
+            TextBox textBox = new()
+            {
+                Left = 20,
+                Top = 50,
+                Width = 740,
+                Text = filePath
+            };
 
-            prompt.Controls.Add(label); prompt.Controls.Add(textBox);
-            prompt.Controls.Add(yesButton); prompt.Controls.Add(noButton);
-            prompt.AcceptButton = yesButton; prompt.CancelButton = noButton;
+            Button yesButton = new()
+            {
+                Text = "Tak",
+                Left = 550,
+                Width = 100,
+                Top = 100,
+                DialogResult = DialogResult.Yes
+            };
+
+            Button noButton = new()
+            {
+                Text = "Nie",
+                Left = 660,
+                Width = 100,
+                Top = 100,
+                DialogResult = DialogResult.No
+            };
+
+            prompt.Controls.Add(label);
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(yesButton);
+            prompt.Controls.Add(noButton);
+            prompt.AcceptButton = yesButton;
+            prompt.CancelButton = noButton;
 
             if (prompt.ShowDialog() == DialogResult.Yes)
             {
@@ -51,11 +82,33 @@ namespace SolidEdgeAdd_In.Utils
                 MaximizeBox = false
             };
 
-            Label textLabel = new() { Left = 20, Top = 20, Text = "Podaj mnożnik:", AutoSize = true };
-            TextBox textBox = new() { Left = 20, Top = 50, Width = 240 };
-            Button confirmation = new() { Text = "OK", Left = 160, Width = 100, Top = 80, DialogResult = DialogResult.OK };
+            Label textLabel = new()
+            {
+                Left = 20,
+                Top = 20,
+                Text = "Podaj mnożnik:",
+                AutoSize = true
+            };
 
-            prompt.Controls.Add(textLabel); prompt.Controls.Add(textBox); prompt.Controls.Add(confirmation);
+            TextBox textBox = new()
+            {
+                Left = 20,
+                Top = 50,
+                Width = 240
+            };
+
+            Button confirmation = new()
+            {
+                Text = "OK",
+                Left = 160,
+                Width = 100,
+                Top = 80,
+                DialogResult = DialogResult.OK
+            };
+
+            prompt.Controls.Add(textLabel);
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(confirmation);
             prompt.AcceptButton = confirmation;
 
             if (prompt.ShowDialog() == DialogResult.OK)
@@ -88,29 +141,68 @@ namespace SolidEdgeAdd_In.Utils
                 Width = 350,
                 Height = 320,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
-                Text = "Wybór typu",
+                Text = "Wybór typu (można wiele)",
                 StartPosition = FormStartPosition.CenterScreen,
                 MinimizeBox = false,
                 MaximizeBox = false
             };
 
-            Label label = new() { Left = 20, Top = 20, Width = 300, Text = "Wybierz typ:", AutoSize = true };
-            CheckedListBox checkedListBox = new() { Left = 20, Top = 50, Width = 290, Height = 160, CheckOnClick = true };
+            Label label = new()
+            {
+                Left = 20,
+                Top = 20,
+                Width = 300,
+                Text = "Wybierz typ:",
+                AutoSize = true
+            };
 
-            foreach (var option in availableOptions) { checkedListBox.Items.Add(option); }
+            CheckedListBox checkedListBox = new()
+            {
+                Left = 20,
+                Top = 50,
+                Width = 290,
+                Height = 160,
+                CheckOnClick = true
+            };
 
-            Button okButton = new() { Text = "OK", Left = 100, Width = 100, Top = 230, DialogResult = DialogResult.OK };
-            Button cancelButton = new() { Text = "Anuluj", Left = 210, Width = 100, Top = 230, DialogResult = DialogResult.Cancel };
+            foreach (var option in availableOptions)
+            {
+                checkedListBox.Items.Add(option);
+            }
 
-            prompt.Controls.Add(label); prompt.Controls.Add(checkedListBox);
-            prompt.Controls.Add(okButton); prompt.Controls.Add(cancelButton);
-            prompt.AcceptButton = okButton; prompt.CancelButton = cancelButton;
+            Button okButton = new()
+            {
+                Text = "OK",
+                Left = 100,
+                Width = 100,
+                Top = 230,
+                DialogResult = DialogResult.OK
+            };
+
+            Button cancelButton = new()
+            {
+                Text = "Anuluj",
+                Left = 210,
+                Width = 100,
+                Top = 230,
+                DialogResult = DialogResult.Cancel
+            };
+
+            prompt.Controls.Add(label);
+            prompt.Controls.Add(checkedListBox);
+            prompt.Controls.Add(okButton);
+            prompt.Controls.Add(cancelButton);
+            prompt.AcceptButton = okButton;
+            prompt.CancelButton = cancelButton;
 
             if (prompt.ShowDialog() == DialogResult.OK)
             {
                 foreach (var item in checkedListBox.CheckedItems)
                 {
-                    if (item != null) { selectedTypes.Add(item.ToString()); }
+                    if (item != null)
+                    {
+                        selectedTypes.Add(item.ToString());
+                    }
                 }
             }
 
@@ -132,7 +224,7 @@ namespace SolidEdgeAdd_In.Utils
         {
             string selected = null;
 
-            using var prompt = new Form
+            using Form prompt = new()
             {
                 Width = 300,
                 Height = 200,
@@ -141,17 +233,38 @@ namespace SolidEdgeAdd_In.Utils
                 StartPosition = FormStartPosition.CenterScreen
             };
 
-            ListBox listBox = new() { Left = 10, Top = 10, Width = 200, Height = 120 };
-            foreach (var s in savedSettings) { listBox.Items.Add(s); }
+            ListBox listBox = new()
+            {
+                Left = 10,
+                Top = 10,
+                Width = 200,
+                Height = 120
+            };
 
-            Button confirmation = new() { Text = "OK", Left = 10, Width = 80, Top = 135, DialogResult = DialogResult.OK };
+            foreach (var s in savedSettings)
+            {
+                listBox.Items.Add(s);
+            }
 
-            prompt.Controls.Add(listBox); prompt.Controls.Add(confirmation);
+            Button confirmation = new()
+            {
+                Text = "OK",
+                Left = 10,
+                Width = 80,
+                Top = 135,
+                DialogResult = DialogResult.OK
+            };
+
+            prompt.Controls.Add(listBox);
+            prompt.Controls.Add(confirmation);
             prompt.AcceptButton = confirmation;
 
             if (prompt.ShowDialog() == DialogResult.OK)
             {
-                if (listBox.SelectedItem != null) { selected = listBox.SelectedItem.ToString(); }
+                if (listBox.SelectedItem != null)
+                {
+                    selected = listBox.SelectedItem.ToString();
+                }
             }
 
             return selected;
