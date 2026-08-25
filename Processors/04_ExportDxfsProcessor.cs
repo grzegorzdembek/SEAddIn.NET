@@ -157,9 +157,9 @@ namespace SolidEdgeAdd_In.Processors
 
                     if (!string.IsNullOrEmpty(sizeX))
                     {
-                        sizeX = sizeX.ToLower().Replace("mm", "").Replace(" ", "").Replace(".", ",").Trim();
+                        sizeX = sizeX.ToLower().Replace("mm", "").Replace(" ", "").Replace(",", ".").Trim();
 
-                        if (double.TryParse(sizeX, out double parsedX))
+                        if (double.TryParse(sizeX, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double parsedX))
                         {
                             finalSizeX = parsedX;
                         }
@@ -174,9 +174,9 @@ namespace SolidEdgeAdd_In.Processors
 
                     if (!string.IsNullOrEmpty(sizeY))
                     {
-                        sizeY = sizeY.ToLower().Replace("mm", "").Replace(" ", "").Replace(".", ",").Trim();
+                        sizeY = sizeY.ToLower().Replace("mm", "").Replace(" ", "").Replace(",", ".").Trim();
 
-                        if (double.TryParse(sizeY, out double parsedY))
+                        if (double.TryParse(sizeY, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double parsedY))
                         {
                             finalSizeY = parsedY;
                         }
@@ -185,7 +185,6 @@ namespace SolidEdgeAdd_In.Processors
                             finalSizeY = sizeY;
                         }
                     }
-
                     string color = string.IsNullOrEmpty(item.Value.Color) ? "-" : item.Value.Color;
                     string finish = string.IsNullOrEmpty(item.Value.Finish) ? "-" : item.Value.Finish;
                     string title = string.IsNullOrEmpty(item.Value.Title) ? "-" : item.Value.Title;

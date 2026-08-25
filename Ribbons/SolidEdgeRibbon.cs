@@ -437,6 +437,57 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             assemblyGroup3.AddControl(shotThumbnailsButton);
             */
+
+            RibbonButton openDrawingButton = new(14)
+            {
+                Label = "Open Drawing",
+                ScreenTip = "Opens PDF drawings for the selected elements.",
+                SuperTip = "Searches and opens PDF files corresponding to the selected components in the assembly tree (or the active document). Files must be located in the project directory."
+            };
+            openDrawingButton.Click += (control) =>
+            {
+                SeDocument document = null;
+                try
+                {
+                    document = application.ActiveDocument;
+                    OpenDrawingCommand.Execute(document);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    Helpers.ReleaseCom(ref document);
+                }
+            };
+            generalGroup.AddControl(openDrawingButton);
+
+            RibbonButton renamePartNumberButton = new(15)
+            {
+                Label = "Rename Part Number",
+                ScreenTip = "...",
+                SuperTip = "..."
+            };
+            renamePartNumberButton.Click += (control) =>
+            {
+                SeDocument document = null;
+                try
+                {
+                    document = application.ActiveDocument;
+                    RenamePartNumberCommand.Execute(document);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    Helpers.ReleaseCom(ref document);
+                }
+            };
+            generalGroup.AddControl(renamePartNumberButton);
+
         }
     }
 }

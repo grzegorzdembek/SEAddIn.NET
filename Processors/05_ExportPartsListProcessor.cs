@@ -286,7 +286,7 @@ namespace SolidEdgeAdd_In.Processors
         private bool IsLoaded_Multiplier()
         {
             SeDocument document = (SeDocument)_assembly;
-            using PropertyUtils properties = new PropertyUtils(document);
+            using PropertyUtils properties = new (document);
             int count = properties.Count;
 
             if (count == 0)
