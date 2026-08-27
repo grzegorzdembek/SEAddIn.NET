@@ -13,6 +13,7 @@ namespace SolidEdgeAdd_In.Processors
         private SeAssembly _assembly;
         List<string> _namesToFind;
 
+
         public OpenDrawingProcessor(SeDocument document)
         {
             _document = document;
@@ -34,13 +35,26 @@ namespace SolidEdgeAdd_In.Processors
 
         public void Process()
         {
-            foreach (string name in _namesToFind)
-            {             
-                string drawingPath = Path.Combine(_projectDirectory, name + ".pdf");
-                if (File.Exists(drawingPath))
+            List<string> missingPdfs = new ();
+            var uniqueNames = _namesToFind.Distinct().ToList();
+
+            foreach (string name in uniqueNames)
+            {
+                string pdfPath = Path.Combine(_projectDirectory, name + ".pdf");
+                if (File.Exists(pdfPath))
                 {
-                    System.Diagnostics.Process.Start(drawingPath);
+                    System.Diagnostics.Process.Start(pdfPath);
                 }
+                else
+                { 
+                    missingPdfs.Add(name);
+                }
+            }
+
+            if (missingPdfs.Count > 0)
+            {
+                string missingList = string.Join(System.Environment.NewLine, missingPdfs);
+                MessageBox.Show($"Nie znaleziono rysunków (.pdf) dla {missingPdfs.Count} elementów:\n\n{missingList}");                              
             }
         }
 
@@ -66,11 +80,10 @@ namespace SolidEdgeAdd_In.Processors
                                 selectedItem = selectSet.Item(i);
                                 if (selectedItem != null && selectedItem is SeOccurrence occurrence)
                                 {
-                                    string rawOccurrenceName = occurrence.Name;
-                                    string nameWithoutInstance = rawOccurrenceName.Contains(":") ? rawOccurrenceName.Split(':')[0] : rawOccurrenceName;
-                                    string OccurrenceName = Path.GetFileNameWithoutExtension(nameWithoutInstance);
+                                    string occurrencePath = occurrence.OccurrenceFileName;
+                                    string occurrenceName = Path.GetFileNameWithoutExtension(occurrencePath);
 
-                                    _namesToFind.Add(OccurrenceName);
+                                    _namesToFind.Add(occurrenceName);
                                 }
                             }
                             finally
@@ -81,6 +94,7 @@ namespace SolidEdgeAdd_In.Processors
 
                         if (_namesToFind.Count == 0)
                         {
+                            MessageBox.Show("Nie znaleziono możliwych rysunków do otwarcia.");
                             return false;
                         }
 
@@ -88,6 +102,7 @@ namespace SolidEdgeAdd_In.Processors
                     }
                     else
                     {
+                        MessageBox.Show("Brak zaznaczonych elementów.");
                         return false;
                     }
                 }

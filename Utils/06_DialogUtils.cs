@@ -269,5 +269,91 @@ namespace SolidEdgeAdd_In.Utils
 
             return selected;
         }
+
+        public static (bool isConfirmed, string newPartNumber) GetNewPartNumber(string PartNumber)
+        {
+            bool isConfirmed = false;
+            string newPartNumber = PartNumber;
+
+            using Form prompt = new()
+            {
+                Width = 800,
+                Height = 200,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Wpisz nową nazwe części.",
+                StartPosition = FormStartPosition.CenterScreen
+            };
+
+            Label label = new()
+            {
+                Left = 20,
+                Top = 20,
+                Width = 740,
+                Text = "Stara nazwa (do edycji):"
+            };
+
+            TextBox textBox = new()
+            {
+                Left = 20,
+                Top = 50,
+                Width = 740,
+                Text = PartNumber
+            };
+
+            Button yesButton = new()
+            {
+                Text = "Tak",
+                Left = 550,
+                Width = 100,
+                Top = 100,
+                DialogResult = DialogResult.Yes
+            };
+
+            Button noButton = new()
+            {
+                Text = "Nie",
+                Left = 660,
+                Width = 100,
+                Top = 100,
+                DialogResult = DialogResult.No
+            };
+
+            prompt.Controls.Add(label);
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(yesButton);
+            prompt.Controls.Add(noButton);
+            prompt.AcceptButton = yesButton;
+            prompt.CancelButton = noButton;
+
+            if (prompt.ShowDialog() == DialogResult.Yes)
+            {
+                isConfirmed = true;
+                newPartNumber = textBox.Text;
+            }
+
+            return (isConfirmed, newPartNumber);
+        }
+
+        public static bool IsReplaceAll()
+        {
+            DialogResult result = MessageBox.Show(
+                "Czy chcesz zastąpić wszystkie wystąpienia tej samej części w złożeniu(true), czy tylko to jedno, aktualnie wybrane (false)?",
+                "Zastąpić wszystkie?",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            return result == DialogResult.Yes;
+        }
+
+        public static bool IsGenerateNewDocumentation()
+        {
+            DialogResult result = MessageBox.Show(
+                "W folderze projektu są pliki .pdf/.dxf ze starą nazwą. Wyeksportować nową dokumentację?",
+                "Zapisać nowy .pdf i .dxf?",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            return result == DialogResult.Yes;
+        }
     }
 }

@@ -14,6 +14,7 @@ namespace SolidEdgeAdd_In.Ribbons
             RibbonGroup assemblyGroup1 = tab.AddGroup("Assembly Environment");
             RibbonGroup assemblyGroup2 = tab.AddGroup("Assembly Environment");
             RibbonGroup assemblyGroup3 = tab.AddGroup("Assembly Environment");
+            RibbonGroup assemblyGroup4 = tab.AddGroup("Assembly Environment");
             RibbonGroup generalGroup = tab.AddGroup("General");
 
 
@@ -35,7 +36,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -68,7 +69,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -101,7 +102,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -134,7 +135,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -167,7 +168,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -200,7 +201,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -233,7 +234,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -266,7 +267,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -324,7 +325,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -357,7 +358,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -390,7 +391,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -404,12 +405,12 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             assemblyGroup3.AddControl(fitAndUpdateViewButton);
 
-            /*
+
             RibbonButton shotThumbnailsButton = new (13)
             {
                 Label = "Shot Thumbnails",
-                ScreenTip = "Generates high quality thumbnail images.",
-                SuperTip = "Temporarily hides planes and dimensions, fits view, takes a snapshot and restores the original state."
+                ScreenTip = "...",
+                SuperTip = "..."
             };
             shotThumbnailsButton.Click += (control) =>
             {
@@ -419,11 +420,11 @@ namespace SolidEdgeAdd_In.Ribbons
                     document = application.ActiveDocument;
                     if (document is SeAssembly assembly)
                     {
-                        ShotThumbnailsCommand.Execute(assembly);
+                        MessageBox.Show("Not implemented yet."); // ShotThumbnailsCommand.Execute(assembly);
                     }
                     else
                     {
-                        MessageBox.Show("AddIn will not execute for this document.");
+                        MessageBox.Show("Command will not execute for this document.");
                     }
                 }
                 catch (Exception ex)
@@ -436,7 +437,7 @@ namespace SolidEdgeAdd_In.Ribbons
                 }
             };
             assemblyGroup3.AddControl(shotThumbnailsButton);
-            */
+            
 
             RibbonButton openDrawingButton = new(14)
             {
@@ -463,6 +464,7 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             generalGroup.AddControl(openDrawingButton);
 
+
             RibbonButton renamePartNumberButton = new(15)
             {
                 Label = "Rename Part Number",
@@ -475,7 +477,14 @@ namespace SolidEdgeAdd_In.Ribbons
                 try
                 {
                     document = application.ActiveDocument;
-                    RenamePartNumberCommand.Execute(document);
+                    if (document is SeAssembly assembly)
+                    {
+                        RenamePartNumberCommand.Execute(assembly);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Command will not execute for this document.");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -486,7 +495,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     Helpers.ReleaseCom(ref document);
                 }
             };
-            generalGroup.AddControl(renamePartNumberButton);
+            assemblyGroup4.AddControl(renamePartNumberButton);
 
         }
     }

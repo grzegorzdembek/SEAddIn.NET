@@ -4,13 +4,13 @@ namespace SolidEdgeAdd_In.Commands
 {
     public class RenamePartNumberCommand
     {
-        public static void Execute(SeDocument document)
+        public static void Execute(SeAssembly assembly)
         {
             try
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
-                RenamePartNumberProcessor processor = new(document);
+                RenamePartNumberProcessor processor = new(assembly);
                 if (processor.Initialize())
                 {
                     processor.Process();
