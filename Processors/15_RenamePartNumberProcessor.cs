@@ -1,4 +1,5 @@
 ﻿using SolidEdgeAdd_In.Utils;
+using System.ComponentModel;
 
 namespace SolidEdgeAdd_In.Processors
 {
@@ -10,7 +11,7 @@ namespace SolidEdgeAdd_In.Processors
         private string _assemblyPath;
         private string _projectDirectory;
 
-        private List<SeOccurrence> _occurrencesToProcess;
+        private readonly List<OccurrenceData> _occurrencesToProcess;
 
         readonly StringBuilder _feedback;
 
@@ -18,6 +19,8 @@ namespace SolidEdgeAdd_In.Processors
         {
             _assembly = assembly;
             _application = _assembly.Application;
+
+            _occurrencesToProcess = new();
             _feedback = new StringBuilder();
         }
 
@@ -47,97 +50,124 @@ namespace SolidEdgeAdd_In.Processors
             _feedback.AppendLine("1.Tworzenie kopii oraz zmiany w drzewie złożenia: ");
 
             int i = 0;
-            foreach (SeOccurrence occurrence in _occurrencesToProcess)
-            {             
-                SeOccurrence tempOcc = occurrence;
+            var groupedOccurrences = _occurrencesToProcess.GroupBy(o => o.AssemblyPathToParent);
+            foreach (var group in groupedOccurrences)
+            {
+                string assemblyPathToParent = group.Key;
+                bool isSubAssembly = !assemblyPathToParent.Equals(_assemblyPath, StringComparison.OrdinalIgnoreCase);
+
+                SeOccurrences parentOccurrences = null;
+                SeDocument parentDocument = null;
                 try
                 {
-                    string occurrencePath = occurrence.OccurrenceFileName;
-                    if (processedPaths.Contains(occurrencePath))
+                    OccurrenceData firstOccurrenceData = group.First();
+
+                    parentOccurrences = (SeOccurrences)firstOccurrenceData.Occurrence.Parent;
+                    parentDocument = (SeDocument)parentOccurrences.Parent;
+
+                    foreach (OccurrenceData occurrenceData in group)
                     {
-                        continue;
-                    }
-                    processedPaths.Add(occurrencePath);
-
-                    i++;
-                    _feedback.AppendLine(" ");
-                    _feedback.AppendLine($"     1.{i}:");
-
-                    string occurrenceName = Path.GetFileNameWithoutExtension(occurrencePath);
-                    string occurrenceExtension = Path.GetExtension(occurrencePath);
-
-                    if (!File.Exists(occurrencePath))
-                    {
-                        _feedback.AppendLine($"     [POMINIĘTO] {occurrenceName} -> Brak pliku w folderze projektu.");
-                        continue;
-                    }
-
-                    (bool isConfirmed, string newPartNumber) = DialogUtils.GetNewPartNumber(occurrenceName);
-
-                    if (!isConfirmed)
-                    {
-                        _feedback.AppendLine($"     [POMINIĘTO] - {occurrenceName} -> Anulowano przez użytkownika w procesie podania nowej nazwy.");
-                        continue;
-                    }
-
-                    if (newPartNumber == occurrenceName)
-                    {
-                        _feedback.AppendLine($"     [POMINIĘTO] - {occurrenceName} -> Nie ma czego podmieniać, bo nowa nazwa jest taka sama jak stara.");
-                        continue;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(newPartNumber))
-                    {
-                        _feedback.AppendLine($"     [POMINIĘTO] - {occurrenceName} -> Brak podania nazwy.");
-                        continue;
-                    }
-
-                    string newOccurrencePath = Path.Combine(_projectDirectory, newPartNumber + occurrenceExtension);
-                    string dftPath = Path.Combine(_projectDirectory, occurrenceName + ".dft");
-                    string newDftPath = Path.Combine(_projectDirectory, newPartNumber + ".dft");
-
-                    if (!File.Exists(dftPath))
-                    {
-                        if (!Helpers.IsMessageAccepted($"   Brakuje rysunku (.dft) dla tej części - {occurrenceName} w folderze projektu"))
+                        SeOccurrence tempOcc = occurrenceData.Occurrence;
+                        try
                         {
-                            _feedback.AppendLine($"     [POMINIĘTO] - {occurrenceName} -> Anulowano przez użytkownika, bo brakuje rysunku (.dft).");
+                            string occurrencePath = occurrenceData.OccurrencePath;
+                            if (processedPaths.Contains(occurrencePath))
+                            {
+                                continue;
+                            }
+                            processedPaths.Add(occurrencePath);
+
+                            i++;
+                            _feedback.AppendLine(" ");
+                            _feedback.AppendLine($"     1.{i}:");
+
+                            string occurrenceName = Path.GetFileNameWithoutExtension(occurrencePath);
+                            string occurrenceExtension = Path.GetExtension(occurrencePath);
+
+                            if (!File.Exists(occurrencePath))
+                            {
+                                _feedback.AppendLine($"     [POMINIĘTO] {occurrenceName} -> Brak pliku w folderze projektu.");
+                                continue;
+                            }
+
+                            (bool isConfirmed, string newPartNumber) = DialogUtils.GetNewPartNumber(occurrenceName);
+
+                            if (!isConfirmed)
+                            {
+                                _feedback.AppendLine($"     [POMINIĘTO] - {occurrenceName} -> Anulowano przez użytkownika w procesie podania nowej nazwy.");
+                                continue;
+                            }
+
+                            if (newPartNumber == occurrenceName)
+                            {
+                                _feedback.AppendLine($"     [POMINIĘTO] - {occurrenceName} -> Nie ma czego podmieniać, bo nowa nazwa jest taka sama jak stara.");
+                                continue;
+                            }
+
+                            if (newPartNumber.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                            {
+                                _feedback.AppendLine($"     [POMINIĘTO] - {occurrenceName} -> Nowa nazwa zawiera niedozwolone znaki (np. / \\ : * ? \" < > |).");
+                                continue;
+                            }
+
+                            if (string.IsNullOrWhiteSpace(newPartNumber))
+                            {
+                                _feedback.AppendLine($"     [POMINIĘTO] - {occurrenceName} -> Nie podano nowej nazwy.");
+                                continue;
+                            }
+
+                            string newOccurrencePath = Path.Combine(_projectDirectory, newPartNumber + occurrenceExtension);
+                            string dftPath = Path.Combine(_projectDirectory, occurrenceName + ".dft");
+                            string newDftPath = Path.Combine(_projectDirectory, newPartNumber + ".dft");
+
+                            if (!File.Exists(dftPath))
+                            {
+                                if (!Helpers.IsMessageAccepted($"   Brakuje rysunku (.dft) dla tej części - {occurrenceName} w folderze projektu"))
+                                {
+                                    _feedback.AppendLine($"     [POMINIĘTO] - {occurrenceName} -> Anulowano przez użytkownika, bo brakuje rysunku (.dft).");
+                                    continue;
+                                }
+                                _feedback.AppendLine($"     Brak rysunku (.dft). Nie można wykonać kopii.");
+                            }
+                            else
+                            {
+                                File.Copy(dftPath, newDftPath, true);
+                                _feedback.AppendLine($"     Utworzono kopię pliku (.dft). Ścieżka: {newDftPath}.");
+                            }
+
+                            File.Copy(occurrencePath, newOccurrencePath, true);
+                            _feedback.AppendLine($"     Utworzono kopię pliku ({occurrenceExtension}). Ścieżka: {newOccurrencePath}.");
+
+                            tempOcc.Replace(newOccurrencePath, isReplaceAll, Missing.Value);
+                            _feedback.AppendLine($"     Zmieniono wystąpienie w drzewie złożenia: {occurrenceName} ---> {newPartNumber}.");
+
+                            string oldPdfPath = Path.Combine(_projectDirectory, occurrenceName + ".pdf");
+                            string oldDxfPath = Path.Combine(_projectDirectory, occurrenceName + ".dxf");
+                            bool isGenerateNewDocumentation = false;
+                            if (File.Exists(oldPdfPath) || File.Exists(oldDxfPath))
+                            {
+                                isGenerateNewDocumentation = DialogUtils.IsGenerateNewDocumentation();
+                            }
+
+                            if (File.Exists(newDftPath))
+                            {
+                                draftsToUpdate.Add((newDftPath, occurrencePath, newOccurrencePath, isGenerateNewDocumentation));
+                            }
+                        }
+                        catch
+                        {
                             continue;
                         }
-                        _feedback.AppendLine($"     Brak rysunku (.dft). Nie można wykonać kopii.");
-                    }
-                    else
-                    {
-                        File.Copy(dftPath, newDftPath, true);
-                        _feedback.AppendLine($"     Utworzono kopię pliku (.dft). Ścieżka: {newDftPath}.");
-                    }
-
-                    File.Copy(occurrencePath, newOccurrencePath, true);
-                    _feedback.AppendLine($"     Utworzono kopię pliku ({occurrenceExtension}). Ścieżka: {newOccurrencePath}.");
-
-                    occurrence.Replace(newOccurrencePath, isReplaceAll, Missing.Value);
-                    _feedback.AppendLine($"     Zmieniono wystąpienie w drzewie złożenia: {occurrenceName} ---> {newPartNumber}.");
-
-                    string oldPdfPath = Path.Combine(_projectDirectory, occurrenceName + ".pdf");
-                    string oldDxfPath = Path.Combine(_projectDirectory, occurrenceName + ".dxf");
-                    bool isGenerateNewDocumentation = false;
-                    if (File.Exists(oldPdfPath) || File.Exists(oldDxfPath))
-                    {
-                        isGenerateNewDocumentation = DialogUtils.IsGenerateNewDocumentation();
-                    }
-
-                    if (File.Exists(newDftPath))
-                    {
-                        draftsToUpdate.Add((newDftPath, occurrencePath, newOccurrencePath, isGenerateNewDocumentation));
                     }
                 }
-                catch (Exception ex)
+                catch 
                 {
-                    _feedback.AppendLine($"     [BŁĄD] {ex.Message}");
                     continue;
                 }
                 finally
                 {
-                    Helpers.ReleaseCom(ref tempOcc);
+                    Helpers.ReleaseCom(ref parentOccurrences);
+                    Helpers.ReleaseCom(ref parentDocument);
                 }
             }
 
@@ -154,19 +184,18 @@ namespace SolidEdgeAdd_In.Processors
                 UpdateDrawingLinks(dftPath, oldPath, newPath, isGenDoc);
             }
 
+            _assembly.Save();
             DisplayFeedback();
         }
 
         private void UpdateDrawingLinks(string dftPath, string oldFilePath, string newFilePath, bool isGenerateNewDocumentation)
         {
-            SeDocuments documents = null;
             SeDraft draft = null;
             SeModelLinks modelLinks = null;
 
             try
             {
-                documents = _application.Documents;
-                draft = documents.Open(dftPath);
+                draft = Helpers.GetOpenDocument(_application, dftPath) as SeDraft;
 
                 if (draft == null)
                 {
@@ -226,22 +255,19 @@ namespace SolidEdgeAdd_In.Processors
                 catch { }
 
                 Helpers.ReleaseCom(ref draft);
-                Helpers.ReleaseCom(ref documents);
             }
         }
 
         public bool IsLoaded_SelectedSet()
         {
-            _occurrencesToProcess = new List<SeOccurrence>();
             SelectSet selectSet = null;
-
             try
             {
                 selectSet = _assembly.SelectSet;
 
                 if (selectSet.Count == 0)
                 {
-                    MessageBox.Show("Brak zaznaczonych elementów.");
+                    MessageBox.Show("Nie zaznaczono żadnych elementów.");
                     return false;
                 }
 
@@ -251,16 +277,9 @@ namespace SolidEdgeAdd_In.Processors
                     try
                     {
                         selectedItem = selectSet.Item(i);
-
-                        if (!(selectedItem is SeOccurrence occurrence))
-                        {
-                            Helpers.ReleaseCom(ref selectedItem);
-                            continue;
-                        }
-
-                        _occurrencesToProcess.Add(occurrence);
+                        ExtractOccurrenceData(selectedItem);
                     }
-                    catch
+                    finally
                     {
                         Helpers.ReleaseCom(ref selectedItem);
                     }
@@ -279,6 +298,70 @@ namespace SolidEdgeAdd_In.Processors
                 Helpers.ReleaseCom(ref selectSet);
             }
         }
+
+        private void ExtractOccurrenceData(object item)
+        {
+            if (item == null)
+            {
+                return;
+            }
+
+            object extractedObject = null;
+            SeOccurrences parentOccurrences = null;
+            SeDocument parentDocument = null;
+            SeOccurrence occurrence = null;
+            try
+            {
+                // musimy wypakowac obiekt jesli jest jako referencja (glebsze zagniezdzenie)
+                string typeName = TypeDescriptor.GetClassName(item);
+                if (typeName == "Reference")
+                {
+                    dynamic reference = item;
+                    extractedObject = reference.Object;
+                    occurrence = extractedObject as SeOccurrence;
+                }
+                else
+                {
+                    occurrence = item as SeOccurrence;
+                }
+
+                if (occurrence == null)
+                {
+                    return;
+                }
+
+                string occurrencePath = occurrence.OccurrenceFileName;
+                if (string.IsNullOrEmpty(occurrencePath))
+                {
+                    return;
+                }
+
+                // musimy pobrac rodzica, aby zmodyfikowac wnuka
+                parentOccurrences = (SeOccurrences)occurrence.Parent;
+                parentDocument = (SeDocument)parentOccurrences.Parent;
+                string assemblyPathToParent = parentDocument.FullName;
+
+                _occurrencesToProcess.Add(new OccurrenceData
+                {
+                    OccurrencePath = occurrencePath,
+                    AssemblyPathToParent = assemblyPathToParent,
+                    Occurrence = occurrence
+                });
+
+                if (extractedObject != null)
+                {
+                    extractedObject = null;
+                }
+
+            }
+            finally
+            {
+                Helpers.ReleaseCom(ref extractedObject);
+                Helpers.ReleaseCom(ref parentOccurrences);
+                Helpers.ReleaseCom(ref parentDocument);                                
+            }
+        }
+
 
         private void DisplayFeedback()
         {
@@ -313,16 +396,23 @@ namespace SolidEdgeAdd_In.Processors
         {       
             if (_occurrencesToProcess != null)
             {
-                foreach (var occ in _occurrencesToProcess)
+                foreach (var occurrenceData in _occurrencesToProcess)
                 {
-                    SeOccurrence tempOcc = occ;
-                    if (tempOcc != null)
+                    SeOccurrence tempOccurrence = occurrenceData.Occurrence;
+                    if (tempOccurrence != null)
                     {
-                        Helpers.ReleaseCom(ref tempOcc);
+                        Helpers.ReleaseCom(ref tempOccurrence);
                     }
                 }
                 _occurrencesToProcess.Clear();
             }
+        }
+
+        public class OccurrenceData
+        {
+            public string OccurrencePath { get; set; }
+            public string AssemblyPathToParent { get; set; }
+            public SeOccurrence Occurrence { get; set; }
         }
     }
 }

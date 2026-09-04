@@ -10,7 +10,7 @@ namespace SolidEdgeAdd_In.Commands
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
-                RenamePartNumberProcessor processor = new(assembly);
+                using RenamePartNumberProcessor processor = new(assembly);
                 if (processor.Initialize())
                 {
                     processor.Process();

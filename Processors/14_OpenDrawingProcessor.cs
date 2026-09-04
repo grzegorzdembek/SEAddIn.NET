@@ -78,33 +78,28 @@ namespace SolidEdgeAdd_In.Processors
                             try
                             {
                                 selectedItem = selectSet.Item(i);
-                                if (selectedItem != null && selectedItem is SeOccurrence occurrence)
-                                {
-                                    string occurrencePath = occurrence.OccurrenceFileName;
-                                    string occurrenceName = Path.GetFileNameWithoutExtension(occurrencePath);
-
-                                    _namesToFind.Add(occurrenceName);
-                                }
+                                ProcessSelectedItem(selectedItem);
                             }
                             finally
                             {
                                 Helpers.ReleaseCom(ref selectedItem);
                             }
                         }
-
-                        if (_namesToFind.Count == 0)
+                     
+                        if (_namesToFind.Count == 0) // zalozmy ze chcial otworzyc rysnek zlozenia 
                         {
-                            MessageBox.Show("Nie znaleziono możliwych rysunków do otwarcia.");
-                            return false;
+                            _namesToFind.Add(_documentName);
                         }
-
-                        return true;
                     }
-                    else
+                    else // jesli nic nie zaznaczyl, chce otworzyc rysunek dla zlozenia
                     {
-                        MessageBox.Show("Brak zaznaczonych elementów.");
-                        return false;
+                        _namesToFind.Add(_documentName);
                     }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Wystąpił błąd podczas przetwarzania dokumentu: {ex.Message}");
+                    return false;
                 }
                 finally
                 {
@@ -114,7 +109,90 @@ namespace SolidEdgeAdd_In.Processors
             else
             {
                 _namesToFind.Add(_documentName);
-                return true;
+            }
+
+            return true;
+        }
+
+        private void ProcessSelectedItem(object item)
+        {
+            if (item == null)
+            {
+                return;
+            }
+
+            object extractedObject = null;
+            SeDocument occurrenceDocument = null;
+
+            try
+            {
+                SeOccurrence occurrence = null;
+                string comTypeName = System.ComponentModel.TypeDescriptor.GetClassName(item);
+
+                if (comTypeName == "Reference")
+                {
+                    dynamic dynRef = item;
+                    extractedObject = dynRef.Object;
+                    occurrence = extractedObject as SeOccurrence;
+                }
+                else
+                {
+                    occurrence = item as SeOccurrence;
+                }
+
+                if (occurrence == null)
+                {
+                    return;
+                }
+
+                string occurrencePath = occurrence.OccurrenceFileName;
+
+                if (string.IsNullOrEmpty(occurrencePath))
+                {
+                    return;
+                }
+
+                string occurrenceName = Path.GetFileNameWithoutExtension(occurrencePath);
+                _namesToFind.Add(occurrenceName);
+
+                occurrenceDocument = (SeDocument)occurrence.OccurrenceDocument;
+
+                if (!occurrencePath.EndsWith(".asm", StringComparison.OrdinalIgnoreCase) || occurrenceDocument is not SeAssembly subAssembly)
+                {
+                    return;
+                }
+
+                SeOccurrences subOccurrences = null;
+                try
+                {
+                    subOccurrences = subAssembly.Occurrences;
+                    for (int i = 1; i <= subOccurrences.Count; i++)
+                    {
+                        object childItem = null;
+                        try
+                        {
+                            childItem = subOccurrences.Item(i);
+                            ProcessSelectedItem(childItem);
+                        }
+                        finally
+                        {
+                            Helpers.ReleaseCom(ref childItem);
+                        }
+                    }
+                }
+                finally
+                {
+                    Helpers.ReleaseCom(ref subOccurrences);
+                }
+            }
+            finally
+            {
+                Helpers.ReleaseCom(ref occurrenceDocument);
+
+                if (extractedObject != null)
+                {
+                    Helpers.ReleaseCom(ref extractedObject);
+                }
             }
         }
     }

@@ -2,7 +2,7 @@
 
 namespace SolidEdgeAdd_In.Commands
 {
-    public class ShotThumbnailsCommand
+    public class MakeDrawingsDirectoryCommand
     {
         public static void Execute(SeAssembly assembly)
         {
@@ -10,7 +10,7 @@ namespace SolidEdgeAdd_In.Commands
 
             try
             {
-                ShotThumbnailsProcessor processor = new (assembly);
+                MakeDrawingsDirectoryProcessor processor = new (assembly);
 
                 if (processor.Initialize())
                 {

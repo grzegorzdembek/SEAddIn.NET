@@ -578,7 +578,7 @@ namespace SolidEdgeAdd_In.Utils
 
                     if (!processed.Contains(filePath))
                     {
-                        using PropertyUtils properties = new(document);
+                        using PropertyUtils properties = new (document);
 
                         if (document is SePart || document is SeSheetMetal)
                         {

@@ -15,14 +15,14 @@ namespace SolidEdgeAdd_In.Processors
 
         private string _targetDirectory;
 
-        private List<(string FileName, string Path)> _pdfFiles;
-        private List<(string FileName, string Path)> _dxfFiles;
+        private Dictionary<string, string> _pdfFiles;
+        private Dictionary<string, string> _dxfFiles;
 
         public OrganiseDrawingsProcessor(SeAssembly assembly)
         {
             _assembly = assembly;
 
-            _data = new Dictionary<string, FileData>(StringComparer.OrdinalIgnoreCase);
+            _data = new (StringComparer.OrdinalIgnoreCase);
         }
 
         public bool Initialize()
@@ -30,30 +30,23 @@ namespace SolidEdgeAdd_In.Processors
             _assemblyFilePath = _assembly.FullName;
             _projectDirectory = Path.GetDirectoryName(_assemblyFilePath);
 
-            _drawingsDirectory = Path.Combine(_projectDirectory, Constants.Folders.Drawings);
-            Directory.CreateDirectory(_drawingsDirectory);
-
-            string assemblyFileName = Path.GetFileNameWithoutExtension(_assemblyFilePath);
-            _targetDirectory = Path.Combine(_drawingsDirectory, assemblyFileName);
-            Directory.CreateDirectory(_targetDirectory);
-
-            _pdfFiles = Directory.GetFiles(_projectDirectory, "*.pdf", SearchOption.TopDirectoryOnly)
-                               .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
-
-            _dxfFiles = Directory.GetFiles(_projectDirectory, "*.dxf", SearchOption.TopDirectoryOnly)
-                                 .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
-
-            if (_pdfFiles.Count == 0 && _dxfFiles.Count == 0)
+            if (!IsDrawingsDirectory_Loaded())
             {
-                MessageBox.Show("No PDF or DXF files found in the project directory.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
-            LoadOccurrencesData();
-
-            if (_data.Count == 0)
+            if (!IsTargetDirectory_Loaded())
             {
-                MessageBox.Show("No occurrences found to process.", "Stop", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return false;
+            }
+
+            if (!IsFiles_Loaded())
+            {
+                return false;
+            }
+
+            if (!IsData_Loaded())
+            {
                 return false;
             }
 
@@ -81,10 +74,10 @@ namespace SolidEdgeAdd_In.Processors
                     continue;
                 }
 
-                var matchingPdfs = _pdfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
-                var matchingDxfs = _dxfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
+                bool hasPdf = _pdfFiles.TryGetValue(fileName, out string pdfPath);
+                bool hasDxf = _dxfFiles.TryGetValue(fileName, out string dxfPath);
 
-                if (!matchingPdfs.Any() && !matchingDxfs.Any())
+                if (!hasPdf && !hasDxf)
                 {
                     processedFileNames.Add(fileName);
                     continue;
@@ -93,16 +86,16 @@ namespace SolidEdgeAdd_In.Processors
                 string currentTargetDirectory = Path.Combine(_targetDirectory, subDirectoryName);
                 Directory.CreateDirectory(currentTargetDirectory);
 
-                foreach (var pdf in matchingPdfs)
+                if (hasPdf)
                 {
-                    string expectedPdfPath = Path.Combine(currentTargetDirectory, pdf.FileName + ".pdf");
-                    File.Copy(pdf.Path, expectedPdfPath, true);
+                    string expectedPdfPath = Path.Combine(currentTargetDirectory, fileName + ".pdf");
+                    File.Copy(pdfPath, expectedPdfPath, true);
                 }
 
-                foreach (var dxf in matchingDxfs)
+                if (hasDxf)
                 {
-                    string expectedDxfPath = Path.Combine(currentTargetDirectory, dxf.FileName + ".dxf");
-                    File.Copy(dxf.Path, expectedDxfPath, true);
+                    string expectedDxfPath = Path.Combine(currentTargetDirectory, fileName + ".dxf");
+                    File.Copy(dxfPath, expectedDxfPath, true);
                 }
 
                 processedFileNames.Add(fileName);
@@ -139,7 +132,41 @@ namespace SolidEdgeAdd_In.Processors
             return null;
         }
 
-        private void LoadOccurrencesData()
+        private bool IsDrawingsDirectory_Loaded()
+        {
+            _drawingsDirectory = Path.Combine(_projectDirectory, Constants.Folders.Drawings);
+            Directory.CreateDirectory(_drawingsDirectory);
+
+            return true;
+        }
+
+        private bool IsTargetDirectory_Loaded()
+        {
+            string assemblyFileName = Path.GetFileNameWithoutExtension(_assemblyFilePath);
+            _targetDirectory = Path.Combine(_drawingsDirectory, assemblyFileName);
+            Directory.CreateDirectory(_targetDirectory);
+
+            return true;
+        }
+
+        private bool IsFiles_Loaded()
+        {
+            _pdfFiles = Directory.EnumerateFiles(_projectDirectory, "*.pdf", SearchOption.TopDirectoryOnly)
+                .ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f, StringComparer.OrdinalIgnoreCase);
+
+            _dxfFiles = Directory.EnumerateFiles(_projectDirectory, "*.dxf", SearchOption.TopDirectoryOnly)
+                .ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f, StringComparer.OrdinalIgnoreCase);
+
+            if (_pdfFiles.Count == 0 && _dxfFiles.Count == 0)
+            {
+                MessageBox.Show("Nie znaleziono plików PDF ani DXF w katalogu projektu.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool IsData_Loaded()
         {
             SeOccurrences occurrences = null;
 
@@ -152,6 +179,14 @@ namespace SolidEdgeAdd_In.Processors
             {
                 Helpers.ReleaseCom(ref occurrences);
             }
+
+            if (_data.Count == 0)
+            {
+                MessageBox.Show("Nie znaleziono wystąpień do przetworzenia.");
+                return false;
+            }
+
+            return true;
         }
     }
 }

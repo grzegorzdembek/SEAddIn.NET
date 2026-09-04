@@ -14,7 +14,7 @@ namespace SolidEdgeAdd_In.Processors
         private readonly Dictionary<string, FileData> _data;
         private int _dataCount;
 
-        private List<(string FileName, string Path)> _thumbnails;
+        private Dictionary<string,string> _thumbnails;
         private string _thumbnailsDirectory;
         private int _thumbnailsCount;
         private bool _isGenerateThumbnails;
@@ -28,7 +28,7 @@ namespace SolidEdgeAdd_In.Processors
             _application = _assembly.Application;
 
             _data = new Dictionary<string, FileData>();
-            _thumbnails = new List<(string FileName, string Path)>();
+            _thumbnails = new (StringComparer.OrdinalIgnoreCase);
         }
 
         public bool Initialize()
@@ -157,8 +157,7 @@ namespace SolidEdgeAdd_In.Processors
                 ExcelUtils.Colors(worksheet, typeCol);
                 ExcelUtils.Edit(worksheet);
 
-                var thumbnailsDict = _thumbnails.ToDictionary(t => t.FileName, t => t.Path, StringComparer.OrdinalIgnoreCase);
-                ReportUtils.SetThumbnails(worksheet, thumbnailsDict, typeCol, fileNameCol, thumbnailCol);
+                ReportUtils.SetThumbnails(worksheet, _thumbnails, typeCol, fileNameCol, thumbnailCol);
             }
             finally
             {
@@ -210,8 +209,10 @@ namespace SolidEdgeAdd_In.Processors
             _thumbnailsDirectory = Path.Combine(_projectDirectory, Constants.Folders.Thumbnails);
             Directory.CreateDirectory(_thumbnailsDirectory);
 
-            _thumbnails = Directory.GetFiles(_thumbnailsDirectory, "*.jpg", SearchOption.TopDirectoryOnly)
-                               .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
+            _thumbnails = Directory.EnumerateFiles(_thumbnailsDirectory, "*.jpg", SearchOption.TopDirectoryOnly).ToDictionary(
+                          file => Path.GetFileNameWithoutExtension(file), 
+                          file => file,                                   
+                          StringComparer.OrdinalIgnoreCase);
 
             _thumbnailsCount = _thumbnails.Count;
 
@@ -256,7 +257,10 @@ namespace SolidEdgeAdd_In.Processors
 
                     if (File.Exists(thumbnailPath))
                     {
-                        _thumbnails.Add((item.Value.Name, thumbnailPath));
+                        if (!_thumbnails.ContainsKey(item.Value.Name))
+                        {
+                            _thumbnails.Add(item.Value.Name, thumbnailPath);
+                        }
                     }
                 }
                 catch

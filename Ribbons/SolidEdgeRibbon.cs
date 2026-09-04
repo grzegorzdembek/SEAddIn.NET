@@ -22,7 +22,7 @@ namespace SolidEdgeAdd_In.Ribbons
             {
                 Label = "Save PDF and DXF",
                 ScreenTip = "Saves the active drawing as PDF and DXF.",
-                SuperTip = "The drawing will be saved as both PDF and DXF in the project directory."
+                SuperTip = "It requires the draft document to be open and saved."
             };
             saveDraftButton.Click += (control) =>
             {
@@ -51,11 +51,11 @@ namespace SolidEdgeAdd_In.Ribbons
             draftGroup.AddControl(saveDraftButton);
 
 
-            RibbonButton saveStepButton = new (2)
+            RibbonButton saveStepButton = new(2)
             {
-                Label = "Save STEP",
+                Label = "Save As Step",
                 ScreenTip = "Saves the active document as a STEP file.",
-                SuperTip = "The active document will be saved as a STEP file in the project directory."
+                SuperTip = "It requires the part or sheet metal document to be open and saved."
             };
             saveStepButton.Click += (control) =>
             {
@@ -84,11 +84,11 @@ namespace SolidEdgeAdd_In.Ribbons
             partGroup.AddControl(saveStepButton);
 
 
-            RibbonButton saveFlatPatternButton = new (3)
+            RibbonButton saveFlatPatternButton = new(3)
             {
-                Label = "Save Flat Pattern",
-                ScreenTip = "Saves the flat pattern as a DXF.",
-                SuperTip = "The flat pattern will be saved as a DXF in the project directory."
+                Label = "Save Flat Pattern As Dxf",
+                ScreenTip = "Saves the flat pattern of the active document as a DXF file.",
+                SuperTip = "It requires the part or sheet metal document to be open, saved, and have a flat pattern prepared."
             };
             saveFlatPatternButton.Click += (control) =>
             {
@@ -117,11 +117,11 @@ namespace SolidEdgeAdd_In.Ribbons
             partGroup.AddControl(saveFlatPatternButton);
 
 
-            RibbonButton exportDxfsButton = new (4)
+            RibbonButton exportDxfsButton = new(4)
             {
-                Label = "Export DXFs",
-                ScreenTip = "Exports DXFs of all flat patterns for files - (.par) and (.psm) from the open assembly.",
-                SuperTip = "The DXFs of all flat patterns for files - (par) and (psm) from the open assembly will be exported with excel summary."
+                Label = "Export Dxfs",
+                ScreenTip = "Exports DXF files of all flat patterns for sheet metal parts from the active assembly into a dated package folder.",
+                SuperTip = "It requires the top level assembly to be open and accessible."
             };
             exportDxfsButton.Click += (control) =>
             {
@@ -150,11 +150,11 @@ namespace SolidEdgeAdd_In.Ribbons
             assemblyGroup1.AddControl(exportDxfsButton);
 
 
-            RibbonButton exportPartsListButton = new (5)
+            RibbonButton exportPartsListButton = new(5)
             {
                 Label = "Export Parts List",
-                ScreenTip = "Exports the parts list from the open assembly to Excel.",
-                SuperTip = "An Excel sheet containing the parts list of the open assembly will be saved in the list directory."
+                ScreenTip = "Exports the parts list from the active assembly to Excel, optionally generating and inserting part thumbnails.",
+                SuperTip = "It requires the top level assembly to be open and accessible."
             };
             exportPartsListButton.Click += (control) =>
             {
@@ -183,11 +183,11 @@ namespace SolidEdgeAdd_In.Ribbons
             assemblyGroup1.AddControl(exportPartsListButton);
 
 
-            RibbonButton exportOccurrencelListButton = new (6)
+            RibbonButton exportOccurrencelListButton = new(6)
             {
-                Label = "Export Occurrence List",
-                ScreenTip = "Exports the occurrence list for the active assembly.",
-                SuperTip = "Select the occurrence type and export them to the Excel."
+                Label = "Export Occurrences List",
+                ScreenTip = "Exports filtered occurrence lists grouped by selected part types into separate Excel files, including thumbnails.",
+                SuperTip = "It requires the top level assembly to be open and accessible."
             };
             exportOccurrencelListButton.Click += (control) =>
             {
@@ -216,11 +216,11 @@ namespace SolidEdgeAdd_In.Ribbons
             assemblyGroup2.AddControl(exportOccurrencelListButton);
 
 
-            RibbonButton setCountPropertyButton = new (7)
+            RibbonButton setCountPropertyButton = new(7)
             {
                 Label = "Set Count Property",
-                ScreenTip = "Adds a new property (count) for each instance with type A,B,C.",
-                SuperTip = "Added properties (counts) will be available for all instances in the open assembly."
+                ScreenTip = "Sets a new count property to specific instances (Assembly, Part, Sheet Metal, Steelmaking) in the active assembly.",
+                SuperTip = "It requires the top level assembly to be open and accessible."
             };
             setCountPropertyButton.Click += (control) =>
             {
@@ -249,11 +249,11 @@ namespace SolidEdgeAdd_In.Ribbons
             assemblyGroup1.AddControl(setCountPropertyButton);
 
 
-            RibbonButton clearDxfDateButton = new (8)
+            RibbonButton clearDxfDateButton = new(8)
             {
-                Label = "Clear DxfDate Property",
-                ScreenTip = "Removes the DxfDate property for files in the current assembly.",
-                SuperTip = "This can be used before exporting to DXF."
+                Label = "Clear DxfDate",
+                ScreenTip = "Clears the DxfDate property exclusively for sheet metal (Type B) parts in the current assembly.",
+                SuperTip = "It requires the top level assembly to be open and accessible."
             };
             clearDxfDateButton.Click += (control) =>
             {
@@ -281,11 +281,11 @@ namespace SolidEdgeAdd_In.Ribbons
             };
             assemblyGroup2.AddControl(clearDxfDateButton);
 
-            RibbonButton copyDrawingsButton = new (9)
+            RibbonButton copyDrawingsButton = new(9)
             {
                 Label = "Copy Drawings",
-                ScreenTip = "Copies drawings to the selected directory.",
-                SuperTip = "Copied drawings will be placed in the chosen directory and added column in excel report."
+                ScreenTip = "Copies PDF and DXF drawings based on an Excel summary list into a selected directory, updating the Excel file with the copy status.",
+                SuperTip = "It requires any document to be open, and a previously generated packages directory with an Excel summary."
             };
             copyDrawingsButton.Click += (control) =>
             {
@@ -307,11 +307,11 @@ namespace SolidEdgeAdd_In.Ribbons
             generalGroup.AddControl(copyDrawingsButton);
 
 
-            RibbonButton organizeDrawingsButton = new (10)
+            RibbonButton organizeDrawingsButton = new(10)
             {
-                Label = "Organize Drawings",
-                ScreenTip = "Organizes drawings in the project directory.",
-                SuperTip = "Organizes drawings (files .dxf and .pdf) in the project directory."
+                Label = "Organise Drawings",
+                ScreenTip = "Organises PDF and DXF drawings by sorting them into subdirectories based on their part type within a new assembly folder.",
+                SuperTip = "It requires the assembly document to be open, accessible, and have drawings (.dxf and .pdf) prepared in the Drawings folder."
             };
             organizeDrawingsButton.Click += (control) =>
             {
@@ -340,11 +340,11 @@ namespace SolidEdgeAdd_In.Ribbons
             assemblyGroup2.AddControl(organizeDrawingsButton);
 
 
-            RibbonButton refreshTreeButton = new (11)
+            RibbonButton refreshTreeButton = new(11)
             {
                 Label = "Refresh Tree",
-                ScreenTip = "Loads all files.",
-                SuperTip = "Use this to avoid missing files."
+                ScreenTip = "Refreshes and loads all files in the assembly tree to avoid missing references.",
+                SuperTip = "It requires the top level assembly to be open and accessible."
             };
             refreshTreeButton.Click += (control) =>
             {
@@ -373,11 +373,11 @@ namespace SolidEdgeAdd_In.Ribbons
             assemblyGroup3.AddControl(refreshTreeButton);
 
 
-            RibbonButton fitAndUpdateViewButton = new (12)
+            RibbonButton fitAndUpdateViewButton = new(12)
             {
                 Label = "Fit And Update Views",
-                ScreenTip = "Opens files to fit and update their views.",
-                SuperTip = "Opens each document from the assembly, centers the model in the window (Fit), refreshes the display (Update), and closes the file."
+                ScreenTip = "Fits and updates the views for all models found in the active assembly, applying the ISO named view.",
+                SuperTip = "It requires the top level assembly to be open and accessible."
             };
             fitAndUpdateViewButton.Click += (control) =>
             {
@@ -406,13 +406,13 @@ namespace SolidEdgeAdd_In.Ribbons
             assemblyGroup3.AddControl(fitAndUpdateViewButton);
 
 
-            RibbonButton shotThumbnailsButton = new (13)
+            RibbonButton makeDrawingsDirectoryButton = new(13)
             {
-                Label = "Shot Thumbnails",
-                ScreenTip = "...",
-                SuperTip = "..."
+                Label = "Make Drawings Directory",
+                ScreenTip = "Makes a new directory for drawings and copies all new PDF and DXF files from the project into it.",
+                SuperTip = "It requires the top level assembly to be open, accessible, and have drawings (.dxf and .pdf) prepared in the project folder."
             };
-            shotThumbnailsButton.Click += (control) =>
+            makeDrawingsDirectoryButton.Click += (control) =>
             {
                 SeDocument document = null;
                 try
@@ -420,7 +420,7 @@ namespace SolidEdgeAdd_In.Ribbons
                     document = application.ActiveDocument;
                     if (document is SeAssembly assembly)
                     {
-                        MessageBox.Show("Not implemented yet."); // ShotThumbnailsCommand.Execute(assembly);
+                        MakeDrawingsDirectoryCommand.Execute(assembly);
                     }
                     else
                     {
@@ -436,14 +436,14 @@ namespace SolidEdgeAdd_In.Ribbons
                     Helpers.ReleaseCom(ref document);
                 }
             };
-            assemblyGroup3.AddControl(shotThumbnailsButton);
+            assemblyGroup3.AddControl(makeDrawingsDirectoryButton);
             
 
             RibbonButton openDrawingButton = new(14)
             {
                 Label = "Open Drawing",
-                ScreenTip = "Opens PDF drawings for the selected elements.",
-                SuperTip = "Searches and opens PDF files corresponding to the selected components in the assembly tree (or the active document). Files must be located in the project directory."
+                ScreenTip = "Opens PDF drawings for the selected occurrences, including deeply nested parts, or for the active document itself.",
+                SuperTip = "It requires a document to be open and accessible, with PDF drawings available in the project directory."
             };
             openDrawingButton.Click += (control) =>
             {
@@ -468,8 +468,8 @@ namespace SolidEdgeAdd_In.Ribbons
             RibbonButton renamePartNumberButton = new(15)
             {
                 Label = "Rename Part Number",
-                ScreenTip = "...",
-                SuperTip = "..."
+                ScreenTip = "Renames the part number for the selected occurrences, safely updating references, copying drawing files, and updating drawing links.",
+                SuperTip = "It requires the top level assembly to be open and accessible, with specific occurrences selected."
             };
             renamePartNumberButton.Click += (control) =>
             {

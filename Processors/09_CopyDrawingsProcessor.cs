@@ -6,7 +6,7 @@ namespace SolidEdgeAdd_In.Processors
     {
         private readonly SeDocument _document;
 
-        private string _documentFilePath;
+        private string _documentPath;
         private string _projectDirectory;
 
         private string _packagesDirectory;
@@ -15,8 +15,8 @@ namespace SolidEdgeAdd_In.Processors
 
         private string _excelFilePath;
 
-        private List<(string FileName, string Path)> _pdfFiles;
-        private List<(string FileName, string Path)> _dxfFiles;
+        private Dictionary<string, string> _pdfFiles;
+        private Dictionary<string, string> _dxfFiles;
 
         public CopyDrawingsProcessor(SeDocument document)
         {
@@ -25,54 +25,31 @@ namespace SolidEdgeAdd_In.Processors
 
         public bool Initialize()
         {
-            _documentFilePath = _document.FullName;
-            _projectDirectory = Path.GetDirectoryName(_documentFilePath);
+            _documentPath = _document.FullName;
+            _projectDirectory = Path.GetDirectoryName(_documentPath);
 
-            _packagesDirectory = Path.Combine(_projectDirectory, Constants.Folders.Packages);
-
-            if (!Directory.Exists(_packagesDirectory))
-            {
-                MessageBox.Show("Packages folder not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
-
-            FolderBrowserDialog fbd = new FolderBrowserDialog
-            {
-                Description = "Select the folder where you want to add the Drawings folder (containing the sheet metal summary):",
-                SelectedPath = _packagesDirectory,
-                ShowNewFolderButton = false
-            };
-
-            if (fbd.ShowDialog() == DialogResult.OK)
-            {
-                _selectedDirectory = fbd.SelectedPath;
-            }
-            else
+            if (!IsPackagesDirectory_Loaded())
             {
                 return false;
             }
 
-            string[] excelFiles = Directory.GetFiles(_selectedDirectory, "*.xlsx");
-
-            if (excelFiles.Length == 0 || excelFiles.Length > 1)
+            if (!IsSelectedDirectory_Loaded())
             {
-                MessageBox.Show("Missing or multiple sheet metal summaries found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
-            _excelFilePath = excelFiles[0];
-
-            _drawingsDirectory = Path.Combine(_selectedDirectory, Constants.Folders.Drawings);
-
-            _pdfFiles = Directory.GetFiles(_projectDirectory, "*.pdf", SearchOption.TopDirectoryOnly)
-                                 .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
-
-            _dxfFiles = Directory.GetFiles(_projectDirectory, "*.dxf", SearchOption.TopDirectoryOnly)
-                                 .Select(f => (Path.GetFileNameWithoutExtension(f), f)).ToList();
-
-            if (_pdfFiles.Count == 0 && _dxfFiles.Count == 0)
+            if (!IsExcelFile_Loaded())
             {
-                MessageBox.Show("No PDF or DXF files found in the project directory.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            if (!IsDrawingsDirectory_Loaded())
+            {
+                return false;
+            }
+
+            if (!IsFiles_Loaded())
+            {
                 return false;
             }
 
@@ -127,7 +104,7 @@ namespace SolidEdgeAdd_In.Processors
 
                 if (fileNameColumnIndex == 0)
                 {
-                    MessageBox.Show("Column not found in the Excel file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Nie znaleziono kolumny 'Numer części'.");
                     return;
                 }
 
@@ -176,30 +153,20 @@ namespace SolidEdgeAdd_In.Processors
                             {
                                 isPdfReady = true;
                             }
-                            else
+                            else if (_pdfFiles.TryGetValue(fileName, out string pdfPath))
                             {
-                                var matchingPdfs = _pdfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
-
-                                foreach (var pdf in matchingPdfs)
-                                {
-                                    File.Copy(pdf.Path, expectedPdfPath, true);
-                                    isPdfReady = true;
-                                }
+                                File.Copy(pdfPath, expectedPdfPath, true);
+                                isPdfReady = true;
                             }
 
                             if (File.Exists(expectedDxfPath))
                             {
                                 isDxfReady = true;
                             }
-                            else
+                            else if (_dxfFiles.TryGetValue(fileName, out string dxfPath))
                             {
-                                var matchingDxfs = _dxfFiles.Where(f => f.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
-
-                                foreach (var dxf in matchingDxfs)
-                                {
-                                    File.Copy(dxf.Path, expectedDxfPath, true);
-                                    isDxfReady = true;
-                                }
+                                File.Copy(dxfPath, expectedDxfPath, true);
+                                isDxfReady = true;
                             }
                         }
                     }
@@ -267,6 +234,76 @@ namespace SolidEdgeAdd_In.Processors
 
                 Helpers.ReleaseCom(ref excelApp);
             }
+        }
+
+        private bool IsPackagesDirectory_Loaded()
+        {
+            _packagesDirectory = Path.Combine(_projectDirectory, Constants.Folders.Packages);
+
+            if (!Directory.Exists(_packagesDirectory))
+            {
+                MessageBox.Show("Folder 'Paczki' nie odnaleziony.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool IsSelectedDirectory_Loaded()
+        {
+            FolderBrowserDialog fbd = new()
+            {
+                Description = "Wybierz folder, do którego chcesz dodać folder Rysunki (zawierający podsumowający arkusza .xlsx):",
+                SelectedPath = _packagesDirectory,
+                ShowNewFolderButton = false
+            };
+
+            if (fbd.ShowDialog() == DialogResult.OK)
+            {
+                _selectedDirectory = fbd.SelectedPath;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsExcelFile_Loaded()
+        {
+            string[] excelFiles = Directory.GetFiles(_selectedDirectory, "*.xlsx");
+
+            if (excelFiles.Length == 0 || excelFiles.Length > 1)
+            {
+                MessageBox.Show("Brakuje pliku podsumowującego lub znaleziono więcej niż jeden.");
+                return false;
+            }
+
+            _excelFilePath = excelFiles[0];
+
+            return true;
+        }
+
+        private bool IsDrawingsDirectory_Loaded()
+        {
+            _drawingsDirectory = Path.Combine(_selectedDirectory, Constants.Folders.Drawings);
+
+            return true;
+        }
+
+        private bool IsFiles_Loaded()
+        {
+            _pdfFiles = Directory.EnumerateFiles(_projectDirectory, "*.pdf", SearchOption.TopDirectoryOnly)
+                .ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f, StringComparer.OrdinalIgnoreCase);
+
+            _dxfFiles = Directory.EnumerateFiles(_projectDirectory, "*.dxf", SearchOption.TopDirectoryOnly)
+                .ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f, StringComparer.OrdinalIgnoreCase);
+
+            if (_pdfFiles.Count == 0 && _dxfFiles.Count == 0)
+            {
+                MessageBox.Show("Nie znaleziono plików PDF ani DXF w katalogu projektu.");
+                return false;
+            }
+
+            return true;
         }
     }
 }
